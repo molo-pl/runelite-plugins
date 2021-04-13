@@ -34,10 +34,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -158,9 +156,14 @@ public class FishBarrelPlugin extends Plugin
 	 */
 	private final AtomicInteger cookingXpDrops = new AtomicInteger();
 
-	// too keep track of item IDs in user's inventory
-	private Multiset<Integer> inventoryItems = HashMultiset.create();
-	private Multiset<Integer> equipmentItems = HashMultiset.create();
+	/**
+	 * To keep track of item IDs in user's inventory.
+	 */
+	private final Multiset<Integer> inventoryItems = HashMultiset.create();
+	/**
+	 * To keep track of item IDs in user's worn equipment.
+	 */
+	private final Multiset<Integer> equipmentItems = HashMultiset.create();
 
 	@Override
 	public void startUp()
@@ -178,8 +181,8 @@ public class FishBarrelPlugin extends Plugin
 		if (event.getGameState() == GameState.LOGGED_IN)
 		{
 			// initialize inventory
-			updateInventory(InventoryID.INVENTORY, items -> inventoryItems = items);
-			updateInventory(InventoryID.EQUIPMENT, items -> equipmentItems = items);
+			updateInventory(InventoryID.INVENTORY, inventoryItems);
+			updateInventory(InventoryID.EQUIPMENT, equipmentItems);
 		}
 	}
 
@@ -256,8 +259,8 @@ public class FishBarrelPlugin extends Plugin
 	{
 		if (event.getContainerId() == InventoryID.INVENTORY.getId())
 		{
-			final Multiset<Integer> prevInventory = inventoryItems;
-			updateInventory(event.getItemContainer(), items -> inventoryItems = items);
+			final Multiset<Integer> prevInventory = HashMultiset.create(inventoryItems);
+			updateInventory(event.getItemContainer(), inventoryItems);
 			final Multiset<Integer> diff = Multisets.difference(inventoryItems, prevInventory);
 
 			for (final int newItemId : diff)
@@ -270,7 +273,7 @@ public class FishBarrelPlugin extends Plugin
 		}
 		else if (event.getContainerId() == InventoryID.EQUIPMENT.getId())
 		{
-			updateInventory(event.getItemContainer(), items -> equipmentItems = items);
+			updateInventory(event.getItemContainer(), equipmentItems);
 		}
 	}
 
@@ -367,24 +370,24 @@ public class FishBarrelPlugin extends Plugin
 		}
 	}
 
-	private void updateInventory(InventoryID inventoryID, Consumer<Multiset<Integer>> consumer)
+	private void updateInventory(InventoryID inventoryID, Collection<Integer> target)
 	{
 		clientThread.invokeLater(() ->
 		{
 			final ItemContainer itemContainer = client.getItemContainer(inventoryID);
 			if (itemContainer != null)
 			{
-				updateInventory(itemContainer, consumer);
+				updateInventory(itemContainer, target);
 			}
 		});
 	}
 
-	private void updateInventory(ItemContainer itemContainer, Consumer<Multiset<Integer>> consumer)
+	private void updateInventory(ItemContainer itemContainer, Collection<Integer> target)
 	{
-		final Multiset<Integer> itemIds = Arrays.stream(itemContainer.getItems())
+		target.clear();
+		Arrays.stream(itemContainer.getItems())
 			.map(Item::getId)
-			.collect(Collectors.toCollection(HashMultiset::create));
-		consumer.accept(itemIds);
+			.forEach(target::add);
 	}
 
 	private boolean hasAnyOfItems(Collection<Integer> itemIds)
