@@ -234,11 +234,15 @@ public class FishBarrelPlugin extends Plugin
 				{
 					case RADA_DOUBLE_CATCH_MESSAGE:
 					case FLAKES_DOUBLE_CATCH_MESSAGE:
-						// TODO: handle double catches
-					case CORMORANT_CATCH_MESSAGE:
 						fishCaughtMessages.incrementAndGet();
 						break;
-					default:
+					case CORMORANT_CATCH_MESSAGE:
+						if (FishBarrel.INSTANCE.getHolding() < FishBarrel.CAPACITY)
+						{
+							// cormorant may bring 1 or 2 fish, and there's no indicator, so we may have lost track
+							FishBarrel.INSTANCE.setUnknown(true);
+						}
+						break;
 				}
 			}
 		}
