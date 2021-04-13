@@ -27,6 +27,7 @@ package com.molopl.plugins.fishbarrel;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -79,6 +80,8 @@ public class FishBarrelPlugin extends Plugin
 	private static final String RADA_DOUBLE_CATCH_MESSAGE = "Rada's blessing enabled you to catch an extra fish.";
 	private static final String FLAKES_DOUBLE_CATCH_MESSAGE = "The spirit flakes enabled you to catch an extra fish.";
 	private static final String CORMORANT_CATCH_MESSAGE = "Your cormorant returns with its catch.";
+
+	private static final String BANK_FULL_MESSAGE = "Your bank could not hold your fish.";
 
 	/**
 	 * Maps the name of the fish as it appears in chat message to corresponding item ID.
@@ -186,51 +189,57 @@ public class FishBarrelPlugin extends Plugin
 	@Subscribe
 	public void onChatMessage(ChatMessage event)
 	{
-		if (event.getType() != ChatMessageType.SPAM || !hasOpenBarrel())
+		if (event.getType() == ChatMessageType.GAMEMESSAGE && hasAnyOfItems(FishBarrel.BARREL_IDS))
 		{
-			return;
-		}
-
-		final Matcher matcher = FISH_CAUGHT_MESSAGE.matcher(event.getMessage());
-		if (matcher.matches())
-		{
-			final String fishName = matcher.group(2);
-			if (FISH_TYPES_BY_NAME.containsKey(fishName))
+			if (BANK_FULL_MESSAGE.equals(event.getMessage()))
 			{
-				final String fishCountStr = matcher.group(1);
-				final int fishCount;
-				switch (fishCountStr)
-				{
-					case "a":
-					case "an":
-					case "some":
-						fishCount = 1;
-						break;
-					default:
-						try
-						{
-							fishCount = Integer.parseInt(fishCountStr);
-						}
-						catch (NumberFormatException e)
-						{
-							return;
-						}
-						break;
-				}
-				fishCaughtMessages.updateAndGet(i -> i + fishCount);
+				// couldn't deposit all fish, we've lost track
+				FishBarrel.INSTANCE.setUnknown(true);
 			}
 		}
-		else
+		else if (event.getType() == ChatMessageType.SPAM && hasAnyOfItems(FishBarrel.OPEN_BARREL_IDS))
 		{
-			switch (event.getMessage())
+			final Matcher matcher = FISH_CAUGHT_MESSAGE.matcher(event.getMessage());
+			if (matcher.matches())
 			{
-				case RADA_DOUBLE_CATCH_MESSAGE:
-				case FLAKES_DOUBLE_CATCH_MESSAGE:
-					// TODO: handle double catches
-				case CORMORANT_CATCH_MESSAGE:
-					fishCaughtMessages.incrementAndGet();
-					break;
-				default:
+				final String fishName = matcher.group(2);
+				if (FISH_TYPES_BY_NAME.containsKey(fishName))
+				{
+					final String fishCountStr = matcher.group(1);
+					final int fishCount;
+					switch (fishCountStr)
+					{
+						case "a":
+						case "an":
+						case "some":
+							fishCount = 1;
+							break;
+						default:
+							try
+							{
+								fishCount = Integer.parseInt(fishCountStr);
+							}
+							catch (NumberFormatException e)
+							{
+								return;
+							}
+							break;
+					}
+					fishCaughtMessages.updateAndGet(i -> i + fishCount);
+				}
+			}
+			else
+			{
+				switch (event.getMessage())
+				{
+					case RADA_DOUBLE_CATCH_MESSAGE:
+					case FLAKES_DOUBLE_CATCH_MESSAGE:
+						// TODO: handle double catches
+					case CORMORANT_CATCH_MESSAGE:
+						fishCaughtMessages.incrementAndGet();
+						break;
+					default:
+				}
 			}
 		}
 	}
@@ -329,14 +338,13 @@ public class FishBarrelPlugin extends Plugin
 				return;
 		}
 
-		if (!FishBarrel.ITEM_IDS.contains(itemId))
+		if (!FishBarrel.BARREL_IDS.contains(itemId))
 		{
 			return;
 		}
 
 		if ("Empty".equals(event.getMenuOption()))
 		{
-			// TODO: prevent if bank is full
 			FishBarrel.INSTANCE.setHolding(0);
 			FishBarrel.INSTANCE.setUnknown(false);
 		}
@@ -357,9 +365,9 @@ public class FishBarrelPlugin extends Plugin
 		});
 	}
 
-	private boolean hasOpenBarrel()
+	private boolean hasAnyOfItems(Collection<Integer> itemIds)
 	{
-		for (final int itemId : FishBarrel.OPEN_ITEM_IDS)
+		for (final int itemId : itemIds)
 		{
 			if (inventoryItems.contains(itemId) || equipmentItems.contains(itemId))
 			{

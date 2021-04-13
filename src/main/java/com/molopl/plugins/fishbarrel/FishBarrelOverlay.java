@@ -44,7 +44,7 @@ public class FishBarrelOverlay extends WidgetItemOverlay
 	@Override
 	public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem itemWidget)
 	{
-		if (!FishBarrel.ITEM_IDS.contains(itemId))
+		if (!FishBarrel.BARREL_IDS.contains(itemId))
 		{
 			return;
 		}

@@ -36,14 +36,14 @@ public enum FishBarrel
 
 	public static final int CAPACITY = 28;
 
-	public static final Collection<Integer> ITEM_IDS = ImmutableList.of(
+	public static final Collection<Integer> BARREL_IDS = ImmutableList.of(
 		ItemID.FISH_BARREL,
 		ItemID.OPEN_FISH_BARREL,
 		ItemID.FISH_SACK_BARREL,
 		ItemID.OPEN_FISH_SACK_BARREL
 	);
 
-	public static final Collection<Integer> OPEN_ITEM_IDS = ImmutableList.of(
+	public static final Collection<Integer> OPEN_BARREL_IDS = ImmutableList.of(
 		ItemID.OPEN_FISH_BARREL,
 		ItemID.OPEN_FISH_SACK_BARREL
 	);
