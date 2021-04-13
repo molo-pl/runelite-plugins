@@ -24,11 +24,13 @@
  */
 package com.molopl.plugins.fishbarrel;
 
+import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Multisets;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,11 +49,11 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
 import net.runelite.api.Skill;
 import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.FakeXpDrop;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.events.StatChanged;
 import net.runelite.api.widgets.Widget;
 import static net.runelite.api.widgets.WidgetInfo.TO_CHILD;
 import static net.runelite.api.widgets.WidgetInfo.TO_GROUP;
@@ -71,25 +73,26 @@ public class FishBarrelPlugin extends Plugin
 {
 	/**
 	 * Regex to recognize a chat message as an indicator of a caught fish.
-	 * <p>
-	 * This regex matches only the beginning of the message, since there may be some extra text afterwards
-	 * (for example, infernal eels chat messages are followed by "It hardens as you handle it with your ice gloves.")
 	 */
-	private static final Pattern FISH_CAUGHT_MESSAGE = Pattern.compile("^You catch (an?|some|[0-9]+) ([a-zA-Z]+)[.!]");
+	private static final Pattern FISH_CAUGHT_MESSAGE = Pattern.compile(
+		"^You catch (an?|some|[0-9]+) ([a-zA-Z ]+)[.!]( It hardens as you handle it with your ice gloves.)?$");
 
 	private static final String RADA_DOUBLE_CATCH_MESSAGE = "Rada's blessing enabled you to catch an extra fish.";
 	private static final String FLAKES_DOUBLE_CATCH_MESSAGE = "The spirit flakes enabled you to catch an extra fish.";
 	private static final String CORMORANT_CATCH_MESSAGE = "Your cormorant returns with its catch.";
 
 	private static final String BANK_FULL_MESSAGE = "Your bank could not hold your fish.";
+	private static final String BARREL_FULL_MESSAGE = "The barrel is full. It may be emptied at a bank.";
 
 	/**
 	 * Maps the name of the fish as it appears in chat message to corresponding item ID.
 	 */
 	private static final Map<String, Integer> FISH_TYPES_BY_NAME = ImmutableMap.<String, Integer>builder()
+		// singular 'shrimp' may occur when fishing for Karambwanji
+		.put("shrimp", ItemID.RAW_SHRIMPS)
 		.put("shrimps", ItemID.RAW_SHRIMPS)
 		.put("sardine", ItemID.RAW_SARDINE)
-		.put("Karambwanji", ItemID.KARAMBWANJI) // test
+		.put("Karambwanji", ItemID.KARAMBWANJI)
 		.put("herring", ItemID.RAW_HERRING)
 		.put("anchovies", ItemID.RAW_ANCHOVIES)
 		.put("mackerel", ItemID.RAW_MACKEREL)
@@ -113,7 +116,7 @@ public class FishBarrelPlugin extends Plugin
 		.put("shark", ItemID.RAW_SHARK)
 		.put("infernal eel", ItemID.INFERNAL_EEL)
 		.put("minnows", ItemID.MINNOW)
-		.put("anglerfsh", ItemID.RAW_ANGLERFISH)
+		.put("anglerfish", ItemID.RAW_ANGLERFISH)
 		.put("dark crab", ItemID.RAW_DARK_CRAB)
 		.put("sacred eel", ItemID.SACRED_EEL)
 		.build();
@@ -155,9 +158,9 @@ public class FishBarrelPlugin extends Plugin
 	 */
 	private final AtomicInteger cookingXpDrops = new AtomicInteger();
 
-	// too keep track of user's inventory
-	private Set<Integer> inventoryItems = new HashSet<>();
-	private Set<Integer> equipmentItems = new HashSet<>();
+	// too keep track of item IDs in user's inventory
+	private Multiset<Integer> inventoryItems = HashMultiset.create();
+	private Multiset<Integer> equipmentItems = HashMultiset.create();
 
 	@Override
 	public void startUp()
@@ -191,10 +194,16 @@ public class FishBarrelPlugin extends Plugin
 	{
 		if (event.getType() == ChatMessageType.GAMEMESSAGE && hasAnyOfItems(FishBarrel.BARREL_IDS))
 		{
-			if (BANK_FULL_MESSAGE.equals(event.getMessage()))
+			switch (event.getMessage())
 			{
-				// couldn't deposit all fish, we've lost track
-				FishBarrel.INSTANCE.setUnknown(true);
+				case BANK_FULL_MESSAGE:
+					// if we couldn't deposit all fish, we've lost track
+					FishBarrel.INSTANCE.setUnknown(true);
+					break;
+				case BARREL_FULL_MESSAGE:
+					FishBarrel.INSTANCE.setHolding(FishBarrel.CAPACITY);
+					FishBarrel.INSTANCE.setUnknown(false);
+					break;
 			}
 		}
 		else if (event.getType() == ChatMessageType.SPAM && hasAnyOfItems(FishBarrel.OPEN_BARREL_IDS))
@@ -253,25 +262,28 @@ public class FishBarrelPlugin extends Plugin
 	{
 		if (event.getContainerId() == InventoryID.INVENTORY.getId())
 		{
-			for (final Item newItemId : event.getItemContainer().getItems())
+			final Multiset<Integer> prevInventory = inventoryItems;
+			updateInventory(event.getItemContainer(), items -> inventoryItems = items);
+			final Multiset<Integer> diff = Multisets.difference(inventoryItems, prevInventory);
+
+			for (final int newItemId : diff)
 			{
-				if (ALL_FISH_TYPES.contains(newItemId.getId()))
+				if (ALL_FISH_TYPES.contains(newItemId))
 				{
 					newFishInInventory.incrementAndGet();
 				}
 			}
-			updateInventory(InventoryID.INVENTORY, items -> inventoryItems = items);
 		}
 		else if (event.getContainerId() == InventoryID.EQUIPMENT.getId())
 		{
-			updateInventory(InventoryID.EQUIPMENT, items -> equipmentItems = items);
+			updateInventory(event.getItemContainer(), items -> equipmentItems = items);
 		}
 	}
 
 	@Subscribe
-	public void onFakeXpDrop(FakeXpDrop event)
+	public void onStatChanged(StatChanged event)
 	{
-		if (event.getSkill() == Skill.COOKING)
+		if (event.getSkill() == Skill.COOKING && event.getXp() > 0)
 		{
 			cookingXpDrops.incrementAndGet();
 		}
@@ -347,26 +359,38 @@ public class FishBarrelPlugin extends Plugin
 			return;
 		}
 
-		if ("Empty".equals(event.getMenuOption()))
+		switch (event.getMenuOption())
 		{
-			FishBarrel.INSTANCE.setHolding(0);
-			FishBarrel.INSTANCE.setUnknown(false);
+			case "Empty":
+				// assume there was place in bank; if not, a chat message will appear & will be handled through event
+				FishBarrel.INSTANCE.setHolding(0);
+				FishBarrel.INSTANCE.setUnknown(false);
+				break;
+			case "Fill":
+				// not supported yet
+				FishBarrel.INSTANCE.setUnknown(true);
+				break;
 		}
 	}
 
-	private void updateInventory(InventoryID inventoryID, Consumer<Set<Integer>> consumer)
+	private void updateInventory(InventoryID inventoryID, Consumer<Multiset<Integer>> consumer)
 	{
 		clientThread.invokeLater(() ->
 		{
 			final ItemContainer itemContainer = client.getItemContainer(inventoryID);
 			if (itemContainer != null)
 			{
-				final Set<Integer> itemIds = Arrays.stream(itemContainer.getItems())
-					.map(Item::getId)
-					.collect(Collectors.toSet());
-				consumer.accept(itemIds);
+				updateInventory(itemContainer, consumer);
 			}
 		});
+	}
+
+	private void updateInventory(ItemContainer itemContainer, Consumer<Multiset<Integer>> consumer)
+	{
+		final Multiset<Integer> itemIds = Arrays.stream(itemContainer.getItems())
+			.map(Item::getId)
+			.collect(Collectors.toCollection(HashMultiset::create));
+		consumer.accept(itemIds);
 	}
 
 	private boolean hasAnyOfItems(Collection<Integer> itemIds)
