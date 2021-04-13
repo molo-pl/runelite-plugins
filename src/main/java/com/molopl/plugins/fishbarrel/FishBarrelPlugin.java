@@ -25,6 +25,7 @@
 package com.molopl.plugins.fishbarrel;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
@@ -43,7 +44,9 @@ import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
+import net.runelite.api.Skill;
 import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.FakeXpDrop;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
@@ -65,19 +68,66 @@ import net.runelite.client.ui.overlay.OverlayManager;
 )
 public class FishBarrelPlugin extends Plugin
 {
-	private static final Pattern FISH_CAUGHT_MESSAGE = Pattern.compile("^You catch a ([a-z]+)[.!]?$");
-	private static final Pattern DOUBLE_CATCH_MESSAGE = Pattern.compile("^(The spirit flakes|Rada's blessing) enabled you to catch an extra fish.$");
+	/**
+	 * Regex to recognize a chat message as an indicator of a caught fish.
+	 * <p>
+	 * This regex matches only the beginning of the message, since there may be some extra text afterwards
+	 * (for example, infernal eels chat messages are followed by "It hardens as you handle it with your ice gloves.")
+	 */
+	private static final Pattern FISH_CAUGHT_MESSAGE = Pattern.compile("^You catch (an?|some|[0-9]+) ([a-zA-Z]+)[.!]");
+
+	private static final String RADA_DOUBLE_CATCH_MESSAGE = "Rada's blessing enabled you to catch an extra fish.";
+	private static final String FLAKES_DOUBLE_CATCH_MESSAGE = "The spirit flakes enabled you to catch an extra fish.";
+	private static final String CORMORANT_CATCH_MESSAGE = "Your cormorant returns with its catch.";
 
 	/**
 	 * Maps the name of the fish as it appears in chat message to corresponding item ID.
 	 */
-	private static final Map<String, Integer> FISH_TYPES = ImmutableMap.<String, Integer>builder()
-		.put("tuna", ItemID.RAW_TUNA)
-		.put("swordfish", ItemID.RAW_SWORDFISH)
-		.put("shark", ItemID.RAW_SHARK)
-		.put("lobster", ItemID.RAW_LOBSTER)
+	private static final Map<String, Integer> FISH_TYPES_BY_NAME = ImmutableMap.<String, Integer>builder()
+		.put("shrimps", ItemID.RAW_SHRIMPS)
+		.put("sardine", ItemID.RAW_SARDINE)
+		.put("Karambwanji", ItemID.KARAMBWANJI) // test
+		.put("herring", ItemID.RAW_HERRING)
+		.put("anchovies", ItemID.RAW_ANCHOVIES)
 		.put("mackerel", ItemID.RAW_MACKEREL)
+		.put("trout", ItemID.RAW_TROUT)
 		.put("cod", ItemID.RAW_COD)
+		.put("pike", ItemID.RAW_PIKE)
+		.put("slimy swamp eel", ItemID.RAW_SLIMY_EEL)
+		.put("salmon", ItemID.RAW_SALMON)
+		.put("tuna", ItemID.RAW_TUNA)
+		.put("rainbow fish", ItemID.RAW_RAINBOW_FISH)
+		.put("cave eel", ItemID.RAW_CAVE_EEL)
+		.put("lobster", ItemID.RAW_LOBSTER)
+		.put("bass", ItemID.RAW_BASS)
+		.put("leaping trout", ItemID.LEAPING_TROUT)
+		.put("swordfish", ItemID.RAW_SWORDFISH)
+		.put("lava eel", ItemID.RAW_LAVA_EEL)
+		.put("leaping salmon", ItemID.LEAPING_SALMON)
+		.put("monkfish", ItemID.RAW_MONKFISH)
+		.put("Karambwan", ItemID.RAW_KARAMBWAN)
+		.put("leaping sturgeon", ItemID.LEAPING_STURGEON)
+		.put("shark", ItemID.RAW_SHARK)
+		.put("infernal eel", ItemID.INFERNAL_EEL)
+		.put("minnows", ItemID.MINNOW)
+		.put("anglerfsh", ItemID.RAW_ANGLERFISH)
+		.put("dark crab", ItemID.RAW_DARK_CRAB)
+		.put("sacred eel", ItemID.SACRED_EEL)
+		.build();
+
+	/**
+	 * A set of possible fish caught with a cormorant on Molch island.
+	 */
+	private static final Set<Integer> MOLCH_ISLAND_FISH_TYPES = ImmutableSet.of(
+		ItemID.BLUEGILL,
+		ItemID.COMMON_TENCH,
+		ItemID.MOTTLED_EEL,
+		ItemID.GREATER_SIREN
+	);
+
+	private static final Set<Integer> ALL_FISH_TYPES = ImmutableSet.<Integer>builder()
+		.addAll(FISH_TYPES_BY_NAME.values())
+		.addAll(MOLCH_ISLAND_FISH_TYPES)
 		.build();
 
 	@Inject
@@ -97,6 +147,10 @@ public class FishBarrelPlugin extends Plugin
 	 * Number of new fish in inventory since last barrel's state update.
 	 */
 	private final AtomicInteger newFishInInventory = new AtomicInteger();
+	/**
+	 * Number of cooking XP drops since last barrel's state update (to take infernal harpoon into account).
+	 */
+	private final AtomicInteger cookingXpDrops = new AtomicInteger();
 
 	// too keep track of user's inventory
 	private Set<Integer> inventoryItems = new HashSet<>();
@@ -140,15 +194,44 @@ public class FishBarrelPlugin extends Plugin
 		final Matcher matcher = FISH_CAUGHT_MESSAGE.matcher(event.getMessage());
 		if (matcher.matches())
 		{
-			final String fishName = matcher.group(1);
-			if (FISH_TYPES.containsKey(fishName))
+			final String fishName = matcher.group(2);
+			if (FISH_TYPES_BY_NAME.containsKey(fishName))
 			{
-				fishCaughtMessages.incrementAndGet();
+				final String fishCountStr = matcher.group(1);
+				final int fishCount;
+				switch (fishCountStr)
+				{
+					case "a":
+					case "an":
+					case "some":
+						fishCount = 1;
+						break;
+					default:
+						try
+						{
+							fishCount = Integer.parseInt(fishCountStr);
+						}
+						catch (NumberFormatException e)
+						{
+							return;
+						}
+						break;
+				}
+				fishCaughtMessages.updateAndGet(i -> i + fishCount);
 			}
 		}
-		else if (DOUBLE_CATCH_MESSAGE.matcher(event.getMessage()).matches())
+		else
 		{
-			fishCaughtMessages.incrementAndGet();
+			switch (event.getMessage())
+			{
+				case RADA_DOUBLE_CATCH_MESSAGE:
+				case FLAKES_DOUBLE_CATCH_MESSAGE:
+					// TODO: handle double catches
+				case CORMORANT_CATCH_MESSAGE:
+					fishCaughtMessages.incrementAndGet();
+					break;
+				default:
+			}
 		}
 	}
 
@@ -159,7 +242,7 @@ public class FishBarrelPlugin extends Plugin
 		{
 			for (final Item newItemId : event.getItemContainer().getItems())
 			{
-				if (FISH_TYPES.containsValue(newItemId.getId()))
+				if (ALL_FISH_TYPES.contains(newItemId.getId()))
 				{
 					newFishInInventory.incrementAndGet();
 				}
@@ -173,16 +256,27 @@ public class FishBarrelPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onFakeXpDrop(FakeXpDrop event)
+	{
+		if (event.getSkill() == Skill.COOKING)
+		{
+			cookingXpDrops.incrementAndGet();
+		}
+	}
+
+	@Subscribe
 	public void onGameTick(GameTick event)
 	{
 		if (fishCaughtMessages.get() > 0)
 		{
 			final FishBarrel barrel = FishBarrel.INSTANCE;
 
+			// if all fish went to barrel
 			if (newFishInInventory.get() == 0)
 			{
-				// all fish went to barrel
-				barrel.setHolding(Math.min(FishBarrel.CAPACITY, barrel.getHolding() + fishCaughtMessages.get()));
+				// infernal harpoon can reduce number of caught fish
+				final int delta = Math.max(0, fishCaughtMessages.get() - cookingXpDrops.get());
+				barrel.setHolding(Math.min(FishBarrel.CAPACITY, barrel.getHolding() + delta));
 			}
 			else
 			{
@@ -194,6 +288,7 @@ public class FishBarrelPlugin extends Plugin
 
 		fishCaughtMessages.set(0);
 		newFishInInventory.set(0);
+		cookingXpDrops.set(0);
 	}
 
 	@Subscribe
@@ -241,6 +336,7 @@ public class FishBarrelPlugin extends Plugin
 
 		if ("Empty".equals(event.getMenuOption()))
 		{
+			// TODO: prevent if bank is full
 			FishBarrel.INSTANCE.setHolding(0);
 			FishBarrel.INSTANCE.setUnknown(false);
 		}
