@@ -73,7 +73,7 @@ public class FishBarrelPlugin extends Plugin
 	 * Regex to recognize a chat message as an indicator of a caught fish.
 	 */
 	private static final Pattern FISH_CAUGHT_MESSAGE = Pattern.compile(
-		"^You catch (an?|some|[0-9]+) ([a-zA-Z ]+)[.!]( It hardens as you handle it with your ice gloves.)?$");
+		"^You catch (an?|some) ([a-zA-Z ]+)[.!]( It hardens as you handle it with your ice gloves\\.)?$");
 
 	private static final String RADA_DOUBLE_CATCH_MESSAGE = "Rada's blessing enabled you to catch an extra fish.";
 	private static final String FLAKES_DOUBLE_CATCH_MESSAGE = "The spirit flakes enabled you to catch an extra fish.";
@@ -90,7 +90,6 @@ public class FishBarrelPlugin extends Plugin
 		.put("shrimp", ItemID.RAW_SHRIMPS)
 		.put("shrimps", ItemID.RAW_SHRIMPS)
 		.put("sardine", ItemID.RAW_SARDINE)
-		.put("Karambwanji", ItemID.KARAMBWANJI)
 		.put("herring", ItemID.RAW_HERRING)
 		.put("anchovies", ItemID.RAW_ANCHOVIES)
 		.put("mackerel", ItemID.RAW_MACKEREL)
@@ -113,7 +112,6 @@ public class FishBarrelPlugin extends Plugin
 		.put("leaping sturgeon", ItemID.LEAPING_STURGEON)
 		.put("shark", ItemID.RAW_SHARK)
 		.put("infernal eel", ItemID.INFERNAL_EEL)
-		.put("minnows", ItemID.MINNOW)
 		.put("anglerfish", ItemID.RAW_ANGLERFISH)
 		.put("dark crab", ItemID.RAW_DARK_CRAB)
 		.put("sacred eel", ItemID.SACRED_EEL)
@@ -217,27 +215,7 @@ public class FishBarrelPlugin extends Plugin
 				final String fishName = matcher.group(2);
 				if (FISH_TYPES_BY_NAME.containsKey(fishName))
 				{
-					final String fishCountStr = matcher.group(1);
-					final int fishCount;
-					switch (fishCountStr)
-					{
-						case "a":
-						case "an":
-						case "some":
-							fishCount = 1;
-							break;
-						default:
-							try
-							{
-								fishCount = Integer.parseInt(fishCountStr);
-							}
-							catch (NumberFormatException e)
-							{
-								return;
-							}
-							break;
-					}
-					fishCaughtMessages.updateAndGet(i -> i + fishCount);
+					fishCaughtMessages.incrementAndGet();
 				}
 			}
 			else
