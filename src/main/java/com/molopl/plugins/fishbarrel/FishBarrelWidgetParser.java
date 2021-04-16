@@ -24,11 +24,8 @@
  */
 package com.molopl.plugins.fishbarrel;
 
-import com.google.common.collect.ImmutableList;
-import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -36,56 +33,33 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class FishBarrelWidgetParser
 {
-	public enum ParseResult
-	{
-		INVALID,
-		INCOMPLETE,
-		VALID
-	}
-
 	private static final String EMPTY_MESSAGE = "The barrel is empty.";
-	private static final String FIRST_MESSAGE_PREFIX = "The barrel contains: ";
-
 	private static final String MESSAGE_ENTRY_REGEX = "([0-9]+) x [a-zA-Z ]+,? ?";
 	private static final Pattern MESSAGE_ENTRY_PATTERN = Pattern.compile(MESSAGE_ENTRY_REGEX);
-	private static final Pattern FULL_MESSAGE_PATTERN = Pattern.compile("^(" + MESSAGE_ENTRY_REGEX + ")+$");
+	private static final Pattern FULL_MESSAGE_PATTERN = Pattern.compile("^The barrel contains: (" + MESSAGE_ENTRY_REGEX + ")+$");
 
-	// if a message ends with either of these, we consider it incomplete
-	private static final Collection<String> INCOMPLETE_INDICATORS = ImmutableList.of("Raw", ",");
-
-	@Getter
-	private int fishCount;
-
-	public ParseResult parse(String message)
+	/**
+	 * @return number of fish as inferred from the 'Check' message, or -1 if couldn't tell
+	 */
+	public int parse(String message)
 	{
 		if (StringUtils.isBlank(message))
 		{
-			return ParseResult.INVALID;
+			return -1;
 		}
 		message = StringUtils.replace(message, "<br>", " ").trim();
 
 		if (EMPTY_MESSAGE.equals(message))
 		{
-			fishCount = 0;
-			return ParseResult.VALID;
-		}
-
-		if (message.startsWith(FIRST_MESSAGE_PREFIX))
-		{
-			fishCount = 0;
-			message = message.substring(FIRST_MESSAGE_PREFIX.length());
-		}
-		else if (fishCount == 0)
-		{
-			// if we're not in the middle of parsing, this is an error
-			return ParseResult.INVALID;
+			return 0;
 		}
 
 		if (!FULL_MESSAGE_PATTERN.matcher(message).matches())
 		{
-			return ParseResult.INVALID;
+			return -1;
 		}
 
+		int fishCount = 0;
 		final Matcher matcher = MESSAGE_ENTRY_PATTERN.matcher(message);
 		while (matcher.find())
 		{
@@ -95,11 +69,10 @@ public class FishBarrelWidgetParser
 			}
 			catch (NumberFormatException e)
 			{
-				return ParseResult.INVALID;
+				return -1;
 			}
 		}
-		return INCOMPLETE_INDICATORS.stream().anyMatch(message::endsWith)
-			? ParseResult.INCOMPLETE
-			: ParseResult.VALID;
+
+		return fishCount;
 	}
 }

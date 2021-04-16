@@ -24,7 +24,6 @@
  */
 package com.molopl.plugins.fishbarrel;
 
-import com.molopl.plugins.fishbarrel.FishBarrelWidgetParser.ParseResult;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
@@ -33,66 +32,28 @@ public class FishBarrelWidgetParserTest
 	private final FishBarrelWidgetParser parser = new FishBarrelWidgetParser();
 
 	@Test
-	public void testInvalidMessage()
+	public void testInvalidMessages()
 	{
-		assertEquals(ParseResult.INVALID, parser.parse("Hello, World!"));
+		assertEquals(-1, parser.parse("Hello, World!"));
+		assertEquals(-1, parser.parse("28 x Raw swordfish"));
 	}
 
 	@Test
 	public void testValidEmptyMessage()
 	{
-		assertEquals(ParseResult.VALID, parser.parse("The barrel is empty."));
-		assertEquals(0, parser.getFishCount());
+		assertEquals(0, parser.parse("The barrel is empty."));
 	}
 
 	@Test
-	public void testValidSingleWidgetMessage()
+	public void testValidMessages()
 	{
-		assertEquals(ParseResult.VALID, parser.parse(String.join("<br>",
+		assertEquals(27, parser.parse(String.join("<br>",
+			"The barrel contains:",
+			"27 x Raw anglerfish")));
+		assertEquals(12, parser.parse(String.join("<br>",
 			"The barrel contains:",
 			"1 x Raw anglerfish, 2 x Raw monkfish, 3 x Raw",
 			"shrimps, 1 x Raw anchovies, 1 x Raw salmon, 1 x Raw",
 			"cod, 1 x Raw macerel, 1 x Raw tuna, 1 x Raw bass")));
-		assertEquals(12, parser.getFishCount());
-	}
-
-	@Test
-	public void testValidMultiWidgetMessage()
-	{
-		assertEquals(ParseResult.INCOMPLETE, parser.parse(String.join("<br>",
-			"The barrel contains:",
-			"1 x Raw anglerfish, 2 x Raw monkfish, 3 x Raw",
-			"shrimps, 1 x Raw anchovies, 1 x Raw salmon, 1 x Raw",
-			"cod, 1 x Raw macerel, 1 x Raw tuna, 1 x Raw bass,")));
-		assertEquals(ParseResult.VALID, parser.parse(String.join("<br>",
-			"1 x Raw swordfish, 1 x Raw lobster, 1 x Raw shark,",
-			"1 x Raw manta ray, 1 x Raw sea turtle")));
-		assertEquals(17, parser.getFishCount());
-	}
-
-	@Test
-	public void testSecondWidgetMessageOnly()
-	{
-		assertEquals(ParseResult.INVALID, parser.parse("28 x Raw swordfish"));
-	}
-
-	@Test
-	public void testValidToInvalidMessage()
-	{
-		assertEquals(ParseResult.VALID, parser.parse(String.join("<br>",
-			"The barrel contains:",
-			"10 x Raw swordfish, 10 x Raw shark")));
-		assertEquals(ParseResult.INVALID, parser.parse("Hello, World!"));
-	}
-
-	@Test
-	public void testInvalidToValidMessage()
-	{
-		assertEquals(ParseResult.INVALID, parser.parse("Hello, World!"));
-		assertEquals(ParseResult.VALID, parser.parse(String.join("<br>",
-			"The barrel contains:",
-			"28 x Raw anglerfish")));
-
-		assertEquals(28, parser.getFishCount());
 	}
 }

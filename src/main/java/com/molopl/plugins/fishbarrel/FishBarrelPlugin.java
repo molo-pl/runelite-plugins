@@ -310,17 +310,13 @@ public class FishBarrelPlugin extends Plugin
 					return;
 				}
 
-				switch (widgetParser.parse(widget.getText()))
+				final int parseResult = widgetParser.parse(widget.getText());
+				if (parseResult != -1)
 				{
-					case VALID:
-						FishBarrel.STATE.setHolding(widgetParser.getFishCount());
-						FishBarrel.STATE.setUnknown(false);
-						barrelActions.remove(FishBarrelAction.CHECK);
-						break;
-					case INVALID:
-						barrelActions.remove(FishBarrelAction.CHECK);
-						break;
+					FishBarrel.STATE.setHolding(parseResult);
+					FishBarrel.STATE.setUnknown(false);
 				}
+				barrelActions.remove(FishBarrelAction.CHECK);
 			});
 		}
 	}
