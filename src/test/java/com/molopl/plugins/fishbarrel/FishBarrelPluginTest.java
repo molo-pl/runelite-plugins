@@ -27,7 +27,7 @@ package com.molopl.plugins.fishbarrel;
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
-public class FishBarrelTest
+public class FishBarrelPluginTest
 {
 	public static void main(String[] args) throws Exception
 	{

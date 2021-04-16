@@ -31,6 +31,7 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -52,6 +53,7 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.StatChanged;
+import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.Widget;
 import static net.runelite.api.widgets.WidgetInfo.TO_CHILD;
 import static net.runelite.api.widgets.WidgetInfo.TO_GROUP;
@@ -69,9 +71,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 )
 public class FishBarrelPlugin extends Plugin
 {
-	/**
-	 * Regex to recognize a chat message as an indicator of a caught fish.
-	 */
+	// regex to recognize a chat message as an indicator of a caught fish
 	private static final Pattern FISH_CAUGHT_MESSAGE = Pattern.compile(
 		"^You catch (an?|some) ([a-zA-Z ]+)[.!]( It hardens as you handle it with your ice gloves\\.)?$");
 
@@ -82,9 +82,7 @@ public class FishBarrelPlugin extends Plugin
 	private static final String BANK_FULL_MESSAGE = "Your bank could not hold your fish.";
 	private static final String BARREL_FULL_MESSAGE = "The barrel is full. It may be emptied at a bank.";
 
-	/**
-	 * Maps the name of the fish as it appears in chat message to corresponding item ID.
-	 */
+	// maps the name of the fish as it appears in chat message to corresponding item ID
 	private static final Map<String, Integer> FISH_TYPES_BY_NAME = ImmutableMap.<String, Integer>builder()
 		// singular 'shrimp' may occur when fishing for Karambwanji
 		.put("shrimp", ItemID.RAW_SHRIMPS)
@@ -117,9 +115,7 @@ public class FishBarrelPlugin extends Plugin
 		.put("sacred eel", ItemID.SACRED_EEL)
 		.build();
 
-	/**
-	 * A set of possible fish caught with a cormorant on Molch island.
-	 */
+	// a set of possible fish caught with a cormorant on Molch island
 	private static final Set<Integer> MOLCH_ISLAND_FISH_TYPES = ImmutableSet.of(
 		ItemID.BLUEGILL,
 		ItemID.COMMON_TENCH,
@@ -132,6 +128,10 @@ public class FishBarrelPlugin extends Plugin
 		.addAll(MOLCH_ISLAND_FISH_TYPES)
 		.build();
 
+	// constants for the widget which is displayed on barrel 'Check' operation
+	private static final int CHECK_WIDGET_INTERFACE = 193;
+	private static final int CHECK_WIDGET_COMPONENT = 2;
+
 	@Inject
 	private Client client;
 	@Inject
@@ -141,31 +141,21 @@ public class FishBarrelPlugin extends Plugin
 	@Inject
 	private ClientThread clientThread;
 
-	/**
-	 * Number of 'fish caught' chat messages since last barrel's state update.
-	 */
+	// parser for the messages displayed after 'Check' operation
+	private final FishBarrelWidgetParser widgetParser = new FishBarrelWidgetParser();
+	// number of 'fish caught' chat messages since last barrel's state update
 	private final AtomicInteger fishCaughtMessages = new AtomicInteger();
-	/**
-	 * Number of new fish in inventory since last barrel's state update.
-	 */
+	// number of new fish in inventory since last barrel's state update
 	private final AtomicInteger newFishInInventory = new AtomicInteger();
-	/**
-	 * Number of cooking XP drops since last barrel's state update (to take infernal harpoon into account).
-	 */
+	// number of cooking XP drops since last barrel's state update (to take infernal harpoon into account)
 	private final AtomicInteger cookingXpDrops = new AtomicInteger();
-	/**
-	 * Last tick in which user clicked 'Fill' on the barrel.
-	 */
-	private final AtomicInteger lastFillTick = new AtomicInteger();
 
-	/**
-	 * To keep track of item IDs in user's inventory.
-	 */
+	// constants for player inventory
 	private final Multiset<Integer> inventoryItems = HashMultiset.create();
-	/**
-	 * To keep track of item IDs in user's worn equipment.
-	 */
 	private final Multiset<Integer> equipmentItems = HashMultiset.create();
+
+	// a map of last game ticks in which user performed an action on the barrel
+	private final Map<FishBarrelAction, Integer> barrelActions = new HashMap<>();
 
 	@Override
 	public void startUp()
@@ -263,9 +253,9 @@ public class FishBarrelPlugin extends Plugin
 			}
 
 			// if some fish are gone from inventory and user clicked to 'Fill' the barrel recently, update barrel
-			if (removedFish.size() > 0 && lastFillTick.get() >= client.getTickCount() - 3)
+			if (removedFish.size() > 0 && barrelActions.getOrDefault(FishBarrelAction.FILL, 0) >= client.getTickCount() - 3)
 			{
-				lastFillTick.set(0);
+				barrelActions.remove(FishBarrelAction.FILL);
 				if (inventoryItems.stream().anyMatch(ALL_FISH_TYPES::contains))
 				{
 					// if there are still fish in inventory after the 'Fill', the barrel is full
@@ -296,6 +286,39 @@ public class FishBarrelPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onWidgetLoaded(WidgetLoaded event)
+	{
+		if (!barrelActions.containsKey(FishBarrelAction.CHECK))
+		{
+			return;
+		}
+
+		if (event.getGroupId() == CHECK_WIDGET_INTERFACE)
+		{
+			clientThread.invokeLater(() ->
+			{
+				final Widget widget = client.getWidget(CHECK_WIDGET_INTERFACE, CHECK_WIDGET_COMPONENT);
+				if (widget == null)
+				{
+					return;
+				}
+
+				switch (widgetParser.parse(widget.getText()))
+				{
+					case VALID:
+						FishBarrel.STATE.setHolding(widgetParser.getFishCount());
+						FishBarrel.STATE.setUnknown(false);
+						barrelActions.remove(FishBarrelAction.CHECK);
+						break;
+					case INVALID:
+						barrelActions.remove(FishBarrelAction.CHECK);
+						break;
+				}
+			});
+		}
+	}
+
+	@Subscribe
 	public void onGameTick(GameTick event)
 	{
 		if (fishCaughtMessages.get() > 0)
@@ -315,6 +338,13 @@ public class FishBarrelPlugin extends Plugin
 				barrel.setHolding(FishBarrel.CAPACITY);
 				barrel.setUnknown(false);
 			}
+		}
+
+		if (barrelActions.containsKey(FishBarrelAction.EMPTY))
+		{
+			FishBarrel.STATE.setHolding(0);
+			FishBarrel.STATE.setUnknown(false);
+			barrelActions.remove(FishBarrelAction.EMPTY);
 		}
 
 		fishCaughtMessages.set(0);
@@ -365,17 +395,10 @@ public class FishBarrelPlugin extends Plugin
 			return;
 		}
 
-		switch (event.getMenuOption())
+		final FishBarrelAction action = FishBarrelAction.forMenuOption(event.getMenuOption());
+		if (action != null)
 		{
-			case "Empty":
-				// assume there was place in bank; if not, a chat message will appear & will be handled through event
-				FishBarrel.STATE.setHolding(0);
-				FishBarrel.STATE.setUnknown(false);
-				break;
-			case "Fill":
-				// will be handled later either through inventory change event or chat message event
-				lastFillTick.set(client.getTickCount());
-				break;
+			barrelActions.put(action, client.getTickCount());
 		}
 	}
 
