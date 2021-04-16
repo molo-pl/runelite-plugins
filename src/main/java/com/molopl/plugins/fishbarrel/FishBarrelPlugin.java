@@ -153,6 +153,10 @@ public class FishBarrelPlugin extends Plugin
 	 * Number of cooking XP drops since last barrel's state update (to take infernal harpoon into account).
 	 */
 	private final AtomicInteger cookingXpDrops = new AtomicInteger();
+	/**
+	 * Last tick in which user clicked 'Fill' on the barrel.
+	 */
+	private final AtomicInteger lastFillTick = new AtomicInteger();
 
 	/**
 	 * To keep track of item IDs in user's inventory.
@@ -237,15 +241,42 @@ public class FishBarrelPlugin extends Plugin
 	{
 		if (event.getContainerId() == InventoryID.INVENTORY.getId())
 		{
+			if (!hasAnyOfItems(FishBarrel.BARREL_IDS))
+			{
+				updateInventory(event.getItemContainer(), inventoryItems);
+				return;
+			}
+
 			final Multiset<Integer> prevInventory = HashMultiset.create(inventoryItems);
 			updateInventory(event.getItemContainer(), inventoryItems);
-			final Multiset<Integer> diff = Multisets.difference(inventoryItems, prevInventory);
 
-			for (final int newItemId : diff)
+			final Multiset<Integer> addedItems = Multisets.difference(inventoryItems, prevInventory);
+			final Multiset<Integer> addedFish = Multisets.filter(addedItems, ALL_FISH_TYPES::contains);
+
+			final Multiset<Integer> removedItems = Multisets.difference(prevInventory, inventoryItems);
+			final Multiset<Integer> removedFish = Multisets.filter(removedItems, ALL_FISH_TYPES::contains);
+
+			// if some fish are added to inventory, persist the value as it may indicate that the barrel is full
+			if (addedFish.size() > 0)
 			{
-				if (ALL_FISH_TYPES.contains(newItemId))
+				newFishInInventory.updateAndGet(i -> i + addedFish.size());
+			}
+
+			// if some fish are gone from inventory and user clicked to 'Fill' the barrel recently, update barrel
+			if (removedFish.size() > 0 && lastFillTick.get() >= client.getTickCount() - 3)
+			{
+				lastFillTick.set(0);
+				if (inventoryItems.stream().anyMatch(ALL_FISH_TYPES::contains))
 				{
-					newFishInInventory.incrementAndGet();
+					// if there are still fish in inventory after the 'Fill', the barrel is full
+					FishBarrel.INSTANCE.setHolding(FishBarrel.CAPACITY);
+					FishBarrel.INSTANCE.setUnknown(false);
+				}
+				else
+				{
+					// if there are no more fish in inventory after the 'Fill', just increment the count
+					FishBarrel.INSTANCE.setHolding(
+						Math.min(FishBarrel.CAPACITY, FishBarrel.INSTANCE.getHolding() + removedFish.size()));
 				}
 			}
 		}
@@ -342,8 +373,8 @@ public class FishBarrelPlugin extends Plugin
 				FishBarrel.INSTANCE.setUnknown(false);
 				break;
 			case "Fill":
-				// not supported yet
-				FishBarrel.INSTANCE.setUnknown(true);
+				// will be handled later either through inventory change event or chat message event
+				lastFillTick.set(client.getTickCount());
 				break;
 		}
 	}
