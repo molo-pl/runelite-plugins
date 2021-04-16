@@ -46,7 +46,7 @@ public interface LifeSavingConfig extends Config
 	@ConfigItem(
 		keyName = "ringOfLifeNotification",
 		name = "Ring of life notification",
-		description = "Notify when Ring of life is used"
+		description = "Notify when Ring of life is destroyed"
 	)
 	default boolean ringOfLifeNotification()
 	{
@@ -65,8 +65,8 @@ public interface LifeSavingConfig extends Config
 
 	@ConfigItem(
 		keyName = "phoenixNecklaceNotification",
-		name = "Ring of life notification",
-		description = "Notify when Phoenix necklace is used"
+		name = "Phoenix necklace notification",
+		description = "Notify when Phoenix necklace is destroyed"
 	)
 	default boolean phoenixNecklaceNotification()
 	{

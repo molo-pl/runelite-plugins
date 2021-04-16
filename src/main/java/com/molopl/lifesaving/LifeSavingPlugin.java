@@ -28,11 +28,13 @@ import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.client.Notifier;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -41,6 +43,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.itemcharges.ItemChargeConfig;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @PluginDescriptor(
@@ -50,6 +53,9 @@ import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 )
 public class LifeSavingPlugin extends Plugin
 {
+	private static final String RING_OF_LIFE_USED_MSG = "Your Ring of Life saves you and is destroyed in the process.";
+	private static final String PHOENIX_NECKLACE_USED_MSG = "Your phoenix necklace heals you, but is destroyed in the process.";
+
 	@Inject
 	private Client client;
 	@Inject
@@ -58,6 +64,8 @@ public class LifeSavingPlugin extends Plugin
 	private InfoBoxManager infoBoxManager;
 	@Inject
 	private ItemManager itemManager;
+	@Inject
+	private Notifier notifier;
 
 	@Provides
 	public LifeSavingConfig provideConfig(ConfigManager configManager)
@@ -98,7 +106,14 @@ public class LifeSavingPlugin extends Plugin
 	@Subscribe
 	public void onChatMessage(ChatMessage event)
 	{
-		// TODO: implement me!
+		if (event.getType() != ChatMessageType.GAMEMESSAGE)
+		{
+			return;
+		}
+
+		final String message = event.getMessage();
+		checkNotification(config.ringOfLifeNotification(), message, RING_OF_LIFE_USED_MSG);
+		checkNotification(config.phoenixNecklaceNotification(), message, PHOENIX_NECKLACE_USED_MSG);
 	}
 
 	@Subscribe
@@ -110,19 +125,17 @@ public class LifeSavingPlugin extends Plugin
 		}
 
 		final Item[] items = event.getItemContainer().getItems();
-
-		if (config.ringOfLifeInfobox())
-		{
-			updateInfobox(LifeSavingItem.RING_OF_LIFE, items);
-		}
-		if (config.phoenixNecklaceInfobox())
-		{
-			updateInfobox(LifeSavingItem.PHOENIX_NECKLACE, items);
-		}
+		updateInfobox(config.ringOfLifeInfobox(), LifeSavingItem.RING_OF_LIFE, items);
+		updateInfobox(config.phoenixNecklaceInfobox(), LifeSavingItem.PHOENIX_NECKLACE, items);
 	}
 
-	private void updateInfobox(LifeSavingItem type, Item[] wornItems)
+	private void updateInfobox(boolean enabled, LifeSavingItem type, Item[] wornItems)
 	{
+		if (!enabled)
+		{
+			return;
+		}
+
 		removeInfobox(type);
 
 		final int itemId = type.getItemId();
@@ -148,5 +161,13 @@ public class LifeSavingPlugin extends Plugin
 	private void removeInfobox(final LifeSavingItem type)
 	{
 		infoBoxManager.removeIf(infoBox -> infoBox instanceof LifeSavingInfoBox && ((LifeSavingInfoBox) infoBox).getType() == type);
+	}
+
+	private void checkNotification(boolean enabled, String actualMessage, String notification)
+	{
+		if (enabled && StringUtils.contains(actualMessage, notification))
+		{
+			notifier.notify(notification);
+		}
 	}
 }
