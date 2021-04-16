@@ -1,5 +1,7 @@
-# molo-pl / runelite-plugins
+# Life-Saving Jewellery
 
-This repository contains molo-pl's RuneLite plugins. Each plugin is on a different branch - use the branches menu above to navigate around.
+This plugin adds infoboxes and notifications for [Phoenix necklace](https://oldschool.runescape.wiki/w/Phoenix_necklace)
+and [Ring of life](https://oldschool.runescape.wiki/w/Ring_of_life).
 
-If you need support, would like to report a bug or create a feature request, open an issue above.
+- When either of the items is equipped, an infobox will be displayed.
+- When either of the items is consumed, a one-time notifications will be sent.
