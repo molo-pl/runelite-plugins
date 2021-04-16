@@ -32,7 +32,7 @@ import net.runelite.api.ItemID;
 
 public enum FishBarrel
 {
-	INSTANCE;
+	STATE;
 
 	public static final int CAPACITY = 28;
 

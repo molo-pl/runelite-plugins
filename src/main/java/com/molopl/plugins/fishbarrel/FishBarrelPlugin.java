@@ -173,8 +173,8 @@ public class FishBarrelPlugin extends Plugin
 		overlayManager.add(fishBarrelOverlay);
 
 		// initialize barrel
-		FishBarrel.INSTANCE.setHolding(0);
-		FishBarrel.INSTANCE.setUnknown(true);
+		FishBarrel.STATE.setHolding(0);
+		FishBarrel.STATE.setUnknown(true);
 	}
 
 	@Subscribe
@@ -203,11 +203,11 @@ public class FishBarrelPlugin extends Plugin
 			{
 				case BANK_FULL_MESSAGE:
 					// if we couldn't deposit all fish, we've lost track
-					FishBarrel.INSTANCE.setUnknown(true);
+					FishBarrel.STATE.setUnknown(true);
 					break;
 				case BARREL_FULL_MESSAGE:
-					FishBarrel.INSTANCE.setHolding(FishBarrel.CAPACITY);
-					FishBarrel.INSTANCE.setUnknown(false);
+					FishBarrel.STATE.setHolding(FishBarrel.CAPACITY);
+					FishBarrel.STATE.setUnknown(false);
 					break;
 			}
 		}
@@ -269,14 +269,14 @@ public class FishBarrelPlugin extends Plugin
 				if (inventoryItems.stream().anyMatch(ALL_FISH_TYPES::contains))
 				{
 					// if there are still fish in inventory after the 'Fill', the barrel is full
-					FishBarrel.INSTANCE.setHolding(FishBarrel.CAPACITY);
-					FishBarrel.INSTANCE.setUnknown(false);
+					FishBarrel.STATE.setHolding(FishBarrel.CAPACITY);
+					FishBarrel.STATE.setUnknown(false);
 				}
 				else
 				{
 					// if there are no more fish in inventory after the 'Fill', just increment the count
-					FishBarrel.INSTANCE.setHolding(
-						Math.min(FishBarrel.CAPACITY, FishBarrel.INSTANCE.getHolding() + removedFish.size()));
+					FishBarrel.STATE.setHolding(
+						Math.min(FishBarrel.CAPACITY, FishBarrel.STATE.getHolding() + removedFish.size()));
 				}
 			}
 		}
@@ -300,7 +300,7 @@ public class FishBarrelPlugin extends Plugin
 	{
 		if (fishCaughtMessages.get() > 0)
 		{
-			final FishBarrel barrel = FishBarrel.INSTANCE;
+			final FishBarrel barrel = FishBarrel.STATE;
 
 			// if all fish went to barrel
 			if (newFishInInventory.get() == 0)
@@ -369,8 +369,8 @@ public class FishBarrelPlugin extends Plugin
 		{
 			case "Empty":
 				// assume there was place in bank; if not, a chat message will appear & will be handled through event
-				FishBarrel.INSTANCE.setHolding(0);
-				FishBarrel.INSTANCE.setUnknown(false);
+				FishBarrel.STATE.setHolding(0);
+				FishBarrel.STATE.setUnknown(false);
 				break;
 			case "Fill":
 				// will be handled later either through inventory change event or chat message event

@@ -49,7 +49,7 @@ public class FishBarrelOverlay extends WidgetItemOverlay
 			return;
 		}
 
-		final FishBarrel barrel = FishBarrel.INSTANCE;
+		final FishBarrel barrel = FishBarrel.STATE;
 		final Rectangle bounds = itemWidget.getCanvasBounds();
 		final TextComponent textComponent = new TextComponent();
 		textComponent.setPosition(new Point(bounds.x - 1, bounds.y + 8));
