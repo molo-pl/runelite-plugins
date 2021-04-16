@@ -22,16 +22,54 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.molopl.lifesaving;
+package com.molopl.plugins.lifesaving;
 
-import net.runelite.client.RuneLite;
-import net.runelite.client.externalplugins.ExternalPluginManager;
+import net.runelite.client.config.Config;
+import net.runelite.client.config.ConfigGroup;
+import net.runelite.client.config.ConfigItem;
 
-public class LifeSavingPluginTest
+@ConfigGroup(LifeSavingConfig.GROUP)
+public interface LifeSavingConfig extends Config
 {
-	public static void main(String[] args) throws Exception
+	String GROUP = "lifeSavingJewellery";
+
+	@ConfigItem(
+		keyName = "ringOfLifeInfobox",
+		name = "Ring of life infobox",
+		description = "Show infobox when Ring of life is worn"
+	)
+	default boolean ringOfLifeInfobox()
 	{
-		ExternalPluginManager.loadBuiltin(LifeSavingPlugin.class);
-		RuneLite.main(args);
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "ringOfLifeNotification",
+		name = "Ring of life notification",
+		description = "Notify when Ring of life is destroyed"
+	)
+	default boolean ringOfLifeNotification()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "phoenixNecklaceInfobox",
+		name = "Phoenix necklace infobox",
+		description = "Show infobox when Phoenix necklace is worn"
+	)
+	default boolean phoenixNecklaceInfobox()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "phoenixNecklaceNotification",
+		name = "Phoenix necklace notification",
+		description = "Notify when Phoenix necklace is destroyed"
+	)
+	default boolean phoenixNecklaceNotification()
+	{
+		return true;
 	}
 }

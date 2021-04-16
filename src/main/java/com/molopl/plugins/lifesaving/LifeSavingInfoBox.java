@@ -22,54 +22,43 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.molopl.lifesaving;
+package com.molopl.plugins.lifesaving;
 
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import lombok.Getter;
+import net.runelite.client.plugins.Plugin;
+import net.runelite.client.ui.overlay.infobox.InfoBox;
+import net.runelite.client.ui.overlay.infobox.InfoBoxPriority;
 
-@ConfigGroup(LifeSavingConfig.GROUP)
-public interface LifeSavingConfig extends Config
+@Getter
+public class LifeSavingInfoBox extends InfoBox
 {
-	String GROUP = "lifeSavingJewellery";
+	private final LifeSavingItem type;
 
-	@ConfigItem(
-		keyName = "ringOfLifeInfobox",
-		name = "Ring of life infobox",
-		description = "Show infobox when Ring of life is worn"
-	)
-	default boolean ringOfLifeInfobox()
+	public LifeSavingInfoBox(Plugin plugin, BufferedImage image, LifeSavingItem type, String name)
 	{
-		return true;
+		super(image, plugin);
+		this.type = type;
+		setTooltip(name);
+		setPriority(InfoBoxPriority.HIGH);
 	}
 
-	@ConfigItem(
-		keyName = "ringOfLifeNotification",
-		name = "Ring of life notification",
-		description = "Notify when Ring of life is destroyed"
-	)
-	default boolean ringOfLifeNotification()
+	@Override
+	public String getText()
 	{
-		return true;
+		return "";
 	}
 
-	@ConfigItem(
-		keyName = "phoenixNecklaceInfobox",
-		name = "Phoenix necklace infobox",
-		description = "Show infobox when Phoenix necklace is worn"
-	)
-	default boolean phoenixNecklaceInfobox()
+	@Override
+	public Color getTextColor()
 	{
-		return true;
+		return Color.WHITE;
 	}
 
-	@ConfigItem(
-		keyName = "phoenixNecklaceNotification",
-		name = "Phoenix necklace notification",
-		description = "Notify when Phoenix necklace is destroyed"
-	)
-	default boolean phoenixNecklaceNotification()
+	@Override
+	public String getName()
 	{
-		return true;
+		return super.getName() + "_" + type.name();
 	}
 }

@@ -22,43 +22,16 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.molopl.lifesaving;
+package com.molopl.plugins.lifesaving;
 
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-import lombok.Getter;
-import net.runelite.client.plugins.Plugin;
-import net.runelite.client.ui.overlay.infobox.InfoBox;
-import net.runelite.client.ui.overlay.infobox.InfoBoxPriority;
+import net.runelite.client.RuneLite;
+import net.runelite.client.externalplugins.ExternalPluginManager;
 
-@Getter
-public class LifeSavingInfoBox extends InfoBox
+public class LifeSavingPluginTest
 {
-	private final LifeSavingItem type;
-
-	public LifeSavingInfoBox(Plugin plugin, BufferedImage image, LifeSavingItem type, String name)
+	public static void main(String[] args) throws Exception
 	{
-		super(image, plugin);
-		this.type = type;
-		setTooltip(name);
-		setPriority(InfoBoxPriority.HIGH);
-	}
-
-	@Override
-	public String getText()
-	{
-		return "";
-	}
-
-	@Override
-	public Color getTextColor()
-	{
-		return Color.WHITE;
-	}
-
-	@Override
-	public String getName()
-	{
-		return super.getName() + "_" + type.name();
+		ExternalPluginManager.loadBuiltin(LifeSavingPlugin.class);
+		RuneLite.main(args);
 	}
 }
