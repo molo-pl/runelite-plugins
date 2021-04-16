@@ -71,6 +71,9 @@ import net.runelite.client.ui.overlay.OverlayManager;
 )
 public class FishBarrelPlugin extends Plugin
 {
+	// timeout for actions on the barrel
+	private final int GAME_TICK_MARGIN = 3;
+
 	// regex to recognize a chat message as an indicator of a caught fish
 	private static final Pattern FISH_CAUGHT_MESSAGE = Pattern.compile(
 		"^You catch (an?|some) ([a-zA-Z ]+)[.!]( It hardens as you handle it with your ice gloves\\.)?$");
@@ -260,9 +263,8 @@ public class FishBarrelPlugin extends Plugin
 			}
 
 			// if some fish are gone from inventory and user clicked to 'Fill' the barrel recently, update barrel
-			if (removedFish.size() > 0 && barrelActions.getOrDefault(FishBarrelAction.FILL, 0) >= client.getTickCount() - 3)
+			if (removedFish.size() > 0 && recentlyActioned(FishBarrelAction.FILL))
 			{
-				barrelActions.remove(FishBarrelAction.FILL);
 				if (inventoryItems.stream().anyMatch(ALL_FISH_TYPES::contains))
 				{
 					// if there are still fish in inventory after the 'Fill', the barrel is full
@@ -295,12 +297,7 @@ public class FishBarrelPlugin extends Plugin
 	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
-		if (!barrelActions.containsKey(FishBarrelAction.CHECK))
-		{
-			return;
-		}
-
-		if (event.getGroupId() == CHECK_WIDGET_INTERFACE)
+		if (event.getGroupId() == CHECK_WIDGET_INTERFACE && recentlyActioned(FishBarrelAction.CHECK))
 		{
 			clientThread.invokeLater(() ->
 			{
@@ -316,7 +313,6 @@ public class FishBarrelPlugin extends Plugin
 					FishBarrel.STATE.setHolding(parseResult);
 					FishBarrel.STATE.setUnknown(false);
 				}
-				barrelActions.remove(FishBarrelAction.CHECK);
 			});
 		}
 	}
@@ -342,12 +338,10 @@ public class FishBarrelPlugin extends Plugin
 				barrel.setUnknown(false);
 			}
 		}
-
-		if (barrelActions.containsKey(FishBarrelAction.EMPTY))
+		else if (recentlyActioned(FishBarrelAction.EMPTY))
 		{
 			FishBarrel.STATE.setHolding(0);
 			FishBarrel.STATE.setUnknown(false);
-			barrelActions.remove(FishBarrelAction.EMPTY);
 		}
 
 		fishCaughtMessages.set(0);
@@ -433,6 +427,16 @@ public class FishBarrelPlugin extends Plugin
 			{
 				return true;
 			}
+		}
+		return false;
+	}
+
+	private boolean recentlyActioned(FishBarrelAction action)
+	{
+		if (barrelActions.containsKey(action) && barrelActions.get(action) > client.getTickCount() - GAME_TICK_MARGIN)
+		{
+			barrelActions.remove(action);
+			return true;
 		}
 		return false;
 	}
