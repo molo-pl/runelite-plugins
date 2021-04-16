@@ -24,6 +24,8 @@
  */
 package com.molopl.plugins.fishbarrel;
 
+import com.google.common.collect.ImmutableList;
+import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Getter;
@@ -43,11 +45,13 @@ public class FishBarrelWidgetParser
 
 	private static final String EMPTY_MESSAGE = "The barrel is empty.";
 	private static final String FIRST_MESSAGE_PREFIX = "The barrel contains: ";
-	private static final String MULTILINE_MESSAGE_SUFFIX = ",";
 
-	private static final Pattern FULL_MESSAGE_PATTERN = Pattern.compile(
-		"^(" + FIRST_MESSAGE_PREFIX + ")?(([0-9]+) x [a-zA-Z ]+(, )?)+" + MULTILINE_MESSAGE_SUFFIX + "?$");
-	private static final Pattern MESSAGE_ENTRY_PATTERN = Pattern.compile("([0-9]+) x [a-zA-Z ]+");
+	private static final String MESSAGE_ENTRY_REGEX = "([0-9]+) x [a-zA-Z ]+,? ?";
+	private static final Pattern MESSAGE_ENTRY_PATTERN = Pattern.compile(MESSAGE_ENTRY_REGEX);
+	private static final Pattern FULL_MESSAGE_PATTERN = Pattern.compile("^(" + MESSAGE_ENTRY_REGEX + ")+$");
+
+	// if a message ends with either of these, we consider it incomplete
+	private static final Collection<String> INCOMPLETE_INDICATORS = ImmutableList.of("Raw", ",");
 
 	@Getter
 	private int fishCount;
@@ -66,19 +70,19 @@ public class FishBarrelWidgetParser
 			return ParseResult.VALID;
 		}
 
-		if (!FULL_MESSAGE_PATTERN.matcher(message).matches())
-		{
-			return ParseResult.INVALID;
-		}
-
 		if (message.startsWith(FIRST_MESSAGE_PREFIX))
 		{
-			// reset the counter
 			fishCount = 0;
+			message = message.substring(FIRST_MESSAGE_PREFIX.length());
 		}
 		else if (fishCount == 0)
 		{
 			// if we're not in the middle of parsing, this is an error
+			return ParseResult.INVALID;
+		}
+
+		if (!FULL_MESSAGE_PATTERN.matcher(message).matches())
+		{
 			return ParseResult.INVALID;
 		}
 
@@ -94,7 +98,8 @@ public class FishBarrelWidgetParser
 				return ParseResult.INVALID;
 			}
 		}
-
-		return message.endsWith(MULTILINE_MESSAGE_SUFFIX) ? ParseResult.INCOMPLETE : ParseResult.VALID;
+		return INCOMPLETE_INDICATORS.stream().anyMatch(message::endsWith)
+			? ParseResult.INCOMPLETE
+			: ParseResult.VALID;
 	}
 }
