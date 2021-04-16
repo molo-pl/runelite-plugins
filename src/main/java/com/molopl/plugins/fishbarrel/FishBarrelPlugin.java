@@ -123,9 +123,16 @@ public class FishBarrelPlugin extends Plugin
 		ItemID.GREATER_SIREN
 	);
 
+	// other fish type which may not be directly caught, but can be put into the barrel
+	private static final Set<Integer> OTHER_FISH_TYPES = ImmutableSet.of(
+		ItemID.RAW_SEA_TURTLE,
+		ItemID.RAW_MANTA_RAY
+	);
+
 	private static final Set<Integer> ALL_FISH_TYPES = ImmutableSet.<Integer>builder()
 		.addAll(FISH_TYPES_BY_NAME.values())
 		.addAll(MOLCH_ISLAND_FISH_TYPES)
+		.addAll(OTHER_FISH_TYPES)
 		.build();
 
 	// constants for the widget which is displayed on barrel 'Check' operation
