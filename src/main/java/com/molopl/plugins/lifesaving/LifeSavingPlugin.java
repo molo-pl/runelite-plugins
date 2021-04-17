@@ -41,7 +41,6 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.itemcharges.ItemChargeConfig;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import org.apache.commons.lang3.StringUtils;
 
@@ -87,7 +86,7 @@ public class LifeSavingPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (!event.getGroup().equals(ItemChargeConfig.GROUP))
+		if (!event.getGroup().equals(LifeSavingConfig.GROUP))
 		{
 			return;
 		}
