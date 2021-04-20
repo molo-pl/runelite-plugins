@@ -32,9 +32,11 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.Notifier;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -65,6 +67,8 @@ public class LifeSavingPlugin extends Plugin
 	private ItemManager itemManager;
 	@Inject
 	private Notifier notifier;
+	@Inject
+	private ClientThread clientThread;
 
 	@Provides
 	public LifeSavingConfig provideConfig(ConfigManager configManager)
@@ -100,6 +104,19 @@ public class LifeSavingPlugin extends Plugin
 		{
 			removeInfobox(LifeSavingItem.PHOENIX_NECKLACE);
 		}
+
+		clientThread.invokeLater(() ->
+		{
+			final ItemContainer itemContainer = client.getItemContainer(InventoryID.EQUIPMENT);
+			if (itemContainer == null)
+			{
+				return;
+			}
+
+			final Item[] items = itemContainer.getItems();
+			updateInfobox(config.ringOfLifeInfobox(), LifeSavingItem.RING_OF_LIFE, items);
+			updateInfobox(config.phoenixNecklaceInfobox(), LifeSavingItem.PHOENIX_NECKLACE, items);
+		});
 	}
 
 	@Subscribe
