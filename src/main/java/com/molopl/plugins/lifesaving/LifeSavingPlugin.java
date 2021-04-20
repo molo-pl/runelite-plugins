@@ -128,8 +128,8 @@ public class LifeSavingPlugin extends Plugin
 		}
 
 		final String message = event.getMessage();
-		checkNotification(config.ringOfLifeNotification(), message, RING_OF_LIFE_USED_MSG);
-		checkNotification(config.phoenixNecklaceNotification(), message, PHOENIX_NECKLACE_USED_MSG);
+		checkNotification(config.ringOfLifeNotification(), LifeSavingItem.RING_OF_LIFE, message, RING_OF_LIFE_USED_MSG);
+		checkNotification(config.phoenixNecklaceNotification(), LifeSavingItem.PHOENIX_NECKLACE, message, PHOENIX_NECKLACE_USED_MSG);
 	}
 
 	@Subscribe
@@ -179,11 +179,11 @@ public class LifeSavingPlugin extends Plugin
 		infoBoxManager.removeIf(infoBox -> infoBox instanceof LifeSavingInfoBox && ((LifeSavingInfoBox) infoBox).getType() == type);
 	}
 
-	private void checkNotification(boolean enabled, String actualMessage, String notification)
+	private void checkNotification(boolean enabled, LifeSavingItem type, String actualMessage, String expectedMessage)
 	{
-		if (enabled && StringUtils.contains(actualMessage, notification))
+		if (enabled && StringUtils.contains(actualMessage, expectedMessage))
 		{
-			notifier.notify(notification);
+			notifier.notify(String.format("Your %s is destroyed!", itemManager.getItemComposition(type.getItemId()).getName()));
 		}
 	}
 }
