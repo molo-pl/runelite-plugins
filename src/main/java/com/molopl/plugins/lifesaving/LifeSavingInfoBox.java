@@ -29,7 +29,6 @@ import java.awt.image.BufferedImage;
 import lombok.Getter;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.ui.overlay.infobox.InfoBox;
-import net.runelite.client.ui.overlay.infobox.InfoBoxPriority;
 
 @Getter
 public class LifeSavingInfoBox extends InfoBox
@@ -41,7 +40,6 @@ public class LifeSavingInfoBox extends InfoBox
 		super(image, plugin);
 		this.type = type;
 		setTooltip(name);
-		setPriority(InfoBoxPriority.HIGH);
 	}
 
 	@Override
