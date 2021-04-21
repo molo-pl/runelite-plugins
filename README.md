@@ -1,5 +1,6 @@
-# molo-pl / runelite-plugins
+# Last Seen
 
-This repository contains molo-pl's RuneLite plugins. Each plugin is on a different branch - use the branches menu above to navigate around.
+Allows you to check when was the last time you've seen your friends online.
 
-If you need support, would like to report a bug or create a feature request, open an issue above.
+**Note:** this plugin relies on your friends list and only tracks players' activity while you're logged in.
+If you're offline, and your friends log in, the "last seen" information will not be updated.
