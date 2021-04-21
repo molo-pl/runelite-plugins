@@ -24,12 +24,9 @@
  */
 package com.molopl.plugins.lastseen;
 
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -49,7 +46,6 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
@@ -72,15 +68,8 @@ public class LastSeenPlugin extends Plugin
 	@Inject
 	private LastSeenDao dao;
 
-	/**
-	 * In-memory mapping of user display names to last seen timestamp for current game session.
-	 */
-	private final Map<String, Long> lastSeenThisSession = new HashMap<>();
-
-	/**
-	 * Indicator of the last game tick in which data has been persisted.
-	 */
-	private int lastPersistedTick;
+	// in-memory buffer of 'last seen online', persisted periodically
+	private final Map<String, Long> lastSeenBuffer = new HashMap<>();
 
 	@Override
 	protected void startUp()
@@ -94,49 +83,22 @@ public class LastSeenPlugin extends Plugin
 		overlayManager.remove(overlay);
 	}
 
-	private String getLastSeenText(@Nullable Long lastSeenMillis)
-	{
-		if (lastSeenMillis == null)
-		{
-			return "never";
-		}
-
-		final long diffMillis = System.currentTimeMillis() - lastSeenMillis;
-		return ObjectUtils.firstNonNull(
-			getLastSeenTextIfInUnit(diffMillis, ChronoUnit.DAYS, "day", "days"),
-			getLastSeenTextIfInUnit(diffMillis, ChronoUnit.HOURS, "hour", "hours"),
-			getLastSeenTextIfInUnit(diffMillis, ChronoUnit.MINUTES, "minute", "minutes"),
-			"just now"
-		);
-	}
-
-	private String getLastSeenTextIfInUnit(long diffMillis, TemporalUnit temporalUnit, String singular, String plural)
-	{
-		final long durationInUnit = diffMillis / temporalUnit.getDuration().toMillis();
-		return durationInUnit > 0
-			? String.format("%d %s ago", durationInUnit, durationInUnit == 1 ? singular : plural)
-			: null;
-	}
-
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		persistState();
+		persistLastSeen();
 	}
 
 	@Subscribe
 	public void onNameableNameChanged(NameableNameChanged event)
 	{
 		final Nameable nameable = event.getNameable();
-		if (nameable instanceof Friend)
+		if (nameable instanceof Friend && nameable.getPrevName() != null)
 		{
-			if (nameable.getPrevName() != null)
-			{
-				dao.migrateLastSeen(
-					Text.toJagexName(nameable.getPrevName()),
-					Text.toJagexName(nameable.getName())
-				);
-			}
+			dao.migrateLastSeen(
+				Text.toJagexName(nameable.getPrevName()),
+				Text.toJagexName(nameable.getName())
+			);
 		}
 	}
 
@@ -157,8 +119,8 @@ public class LastSeenPlugin extends Plugin
 			final String displayName = Text.toJagexName(Text.removeTags(event.getTarget()));
 			if (StringUtils.isNotBlank(displayName))
 			{
-				final Long lastSeen = lastSeenThisSession.getOrDefault(displayName, dao.getLastSeen(displayName));
-				overlay.setTooltip("Last online: " + getLastSeenText(lastSeen));
+				final Long lastSeen = lastSeenBuffer.getOrDefault(displayName, dao.getLastSeen(displayName));
+				overlay.setTooltip("Last online: " + LastSeenFormatter.format(lastSeen));
 			}
 		}
 	}
@@ -171,33 +133,36 @@ public class LastSeenPlugin extends Plugin
 			return;
 		}
 
-		final int tickCount = client.getTickCount();
-		if (tickCount >= lastPersistedTick + 100)
+		// persist in-memory state every minute
+		if (client.getTickCount() % 100 == 0)
 		{
-			persistState();
+			persistLastSeen();
 		}
 
-		clientThread.invokeLater(() ->
+		// update in-memory state every few seconds
+		if (client.getTickCount() % 5 == 0)
 		{
-			final NameableContainer<Friend> friendContainer = client.getFriendContainer();
-			if (friendContainer == null)
+			clientThread.invokeLater(() ->
 			{
-				return;
-			}
+				final NameableContainer<Friend> friendContainer = client.getFriendContainer();
+				if (friendContainer == null)
+				{
+					return;
+				}
 
-			final long currentTimeMillis = System.currentTimeMillis();
-			Arrays.stream(friendContainer.getMembers())
-				.filter(friend -> friend.getWorld() > 0)
-				.map(Friend::getName)
-				.map(Text::toJagexName)
-				.forEach(displayName -> lastSeenThisSession.put(displayName, currentTimeMillis));
-		});
+				final long currentTimeMillis = System.currentTimeMillis();
+				Arrays.stream(friendContainer.getMembers())
+					.filter(friend -> friend.getWorld() > 0)
+					.map(Friend::getName)
+					.map(Text::toJagexName)
+					.forEach(displayName -> lastSeenBuffer.put(displayName, currentTimeMillis));
+			});
+		}
 	}
 
-	private void persistState()
+	private void persistLastSeen()
 	{
-		lastPersistedTick = client.getTickCount();
-		lastSeenThisSession.forEach(dao::setLastSeen);
-		lastSeenThisSession.clear();
+		lastSeenBuffer.forEach(dao::setLastSeen);
+		lastSeenBuffer.clear();
 	}
 }
