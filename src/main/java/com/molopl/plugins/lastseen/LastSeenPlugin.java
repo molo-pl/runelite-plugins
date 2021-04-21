@@ -50,9 +50,9 @@ import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Last Seen",
+	name = "Last Seen Online",
 	description = "Check when you've last seen your friends online",
-	tags = {"last", "seen", "online"}
+	tags = {"last", "seen", "online", "friends", "activity", "watch"}
 )
 public class LastSeenPlugin extends Plugin
 {

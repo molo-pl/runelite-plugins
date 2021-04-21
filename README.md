@@ -1,4 +1,4 @@
-# Last Seen
+# Last Seen Online
 
 Allows you to check when was the last time you've seen your friends online.
 
