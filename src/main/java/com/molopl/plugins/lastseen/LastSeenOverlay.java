@@ -27,6 +27,8 @@ package com.molopl.plugins.lastseen;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import javax.inject.Inject;
+import lombok.Getter;
+import lombok.Setter;
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.tooltip.Tooltip;
@@ -35,14 +37,16 @@ import net.runelite.client.ui.overlay.tooltip.TooltipManager;
 public class LastSeenOverlay extends Overlay
 {
 	private final Client client;
-	private final LastSeenPlugin plugin;
 	private final TooltipManager tooltipManager;
 
+	@Getter
+	@Setter
+	private String tooltip;
+
 	@Inject
-	private LastSeenOverlay(Client client, LastSeenPlugin plugin, TooltipManager tooltipManager)
+	private LastSeenOverlay(Client client, TooltipManager tooltipManager)
 	{
 		this.client = client;
-		this.plugin = plugin;
 		this.tooltipManager = tooltipManager;
 	}
 
@@ -54,10 +58,9 @@ public class LastSeenOverlay extends Overlay
 			return null;
 		}
 
-		final LastSeenHoverInfo hovered = plugin.getHoverInfo();
-		if (hovered != null)
+		if (tooltip != null)
 		{
-			tooltipManager.add(new Tooltip(hovered.getLastSeen()));
+			tooltipManager.add(new Tooltip(tooltip));
 		}
 
 		return null;

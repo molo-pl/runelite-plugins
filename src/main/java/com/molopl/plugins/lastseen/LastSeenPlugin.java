@@ -24,7 +24,6 @@
  */
 package com.molopl.plugins.lastseen;
 
-import com.google.common.base.Strings;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.Arrays;
@@ -32,7 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Friend;
@@ -52,6 +50,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @PluginDescriptor(
@@ -72,12 +71,6 @@ public class LastSeenPlugin extends Plugin
 	private LastSeenOverlay overlay;
 	@Inject
 	private LastSeenDao dao;
-
-	/**
-	 * Holds information about what to display on hover for the friends list.
-	 */
-	@Getter
-	private LastSeenHoverInfo hoverInfo;
 
 	/**
 	 * In-memory mapping of user display names to last seen timestamp for current game session.
@@ -125,16 +118,6 @@ public class LastSeenPlugin extends Plugin
 			: null;
 	}
 
-	private void setHoverInfo(String displayName)
-	{
-		hoverInfo = null;
-		if (!Strings.isNullOrEmpty(displayName))
-		{
-			final Long lastSeen = lastSeenThisSession.getOrDefault(displayName, dao.getLastSeen(displayName));
-			hoverInfo = new LastSeenHoverInfo(displayName, "Last online: " + getLastSeenText(lastSeen));
-		}
-	}
-
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
@@ -168,13 +151,15 @@ public class LastSeenPlugin extends Plugin
 	{
 		final int groupId = WidgetInfo.TO_GROUP(event.getActionParam1());
 
+		overlay.setTooltip(null);
 		if (groupId == WidgetInfo.FRIENDS_LIST.getGroupId() && event.getOption().equals("Message"))
 		{
-			setHoverInfo(Text.toJagexName(Text.removeTags(event.getTarget())));
-		}
-		else
-		{
-			hoverInfo = null;
+			final String displayName = Text.toJagexName(Text.removeTags(event.getTarget()));
+			if (StringUtils.isNotBlank(displayName))
+			{
+				final Long lastSeen = lastSeenThisSession.getOrDefault(displayName, dao.getLastSeen(displayName));
+				overlay.setTooltip("Last online: " + getLastSeenText(lastSeen));
+			}
 		}
 	}
 
