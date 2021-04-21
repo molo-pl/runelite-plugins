@@ -53,12 +53,7 @@ public class LastSeenOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (client.isMenuOpen())
-		{
-			return null;
-		}
-
-		if (tooltip != null)
+		if (!client.isMenuOpen() && tooltip != null)
 		{
 			tooltipManager.add(new Tooltip(tooltip));
 		}
