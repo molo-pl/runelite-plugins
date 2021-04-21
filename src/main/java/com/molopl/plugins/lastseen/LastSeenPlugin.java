@@ -26,7 +26,9 @@ package com.molopl.plugins.lastseen;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -68,6 +70,7 @@ public class LastSeenPlugin extends Plugin
 	@Inject
 	private LastSeenDao dao;
 
+	private final Set<String> currentlyOnline = new HashSet<>();
 	// in-memory buffer of 'last seen online', persisted periodically
 	private final Map<String, Long> lastSeenBuffer = new HashMap<>();
 
@@ -117,7 +120,7 @@ public class LastSeenPlugin extends Plugin
 		if (groupId == WidgetInfo.FRIENDS_LIST.getGroupId() && event.getOption().equals("Message"))
 		{
 			final String displayName = Text.toJagexName(Text.removeTags(event.getTarget()));
-			if (StringUtils.isNotBlank(displayName))
+			if (StringUtils.isNotBlank(displayName) && !currentlyOnline.contains(displayName))
 			{
 				final Long lastSeen = lastSeenBuffer.getOrDefault(displayName, dao.getLastSeen(displayName));
 				overlay.setTooltip("Last online: " + LastSeenFormatter.format(lastSeen));
@@ -150,12 +153,15 @@ public class LastSeenPlugin extends Plugin
 					return;
 				}
 
-				final long currentTimeMillis = System.currentTimeMillis();
+				currentlyOnline.clear();
 				Arrays.stream(friendContainer.getMembers())
 					.filter(friend -> friend.getWorld() > 0)
 					.map(Friend::getName)
 					.map(Text::toJagexName)
-					.forEach(displayName -> lastSeenBuffer.put(displayName, currentTimeMillis));
+					.forEach(currentlyOnline::add);
+
+				final long currentTimeMillis = System.currentTimeMillis();
+				currentlyOnline.forEach(displayName -> lastSeenBuffer.put(displayName, currentTimeMillis));
 			});
 		}
 	}
