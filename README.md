@@ -4,7 +4,7 @@ Allows you to check when was the last time you've seen your friends online.
 
 ![Screenshot](screenshot.png)
 
-## Disclaimer
+## Limitations
 
-This plugin relies on your friends list and only tracks players' activity while you're logged in.
-If you're offline, and your friends log in, the "last seen" information will not be updated.
+This plugin only tracks your friends' activity while you're logged in.
+Anything that happens while you're offline won't be recorded.
