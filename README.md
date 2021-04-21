@@ -3,6 +3,8 @@
 This plugin adds an overlay for the [Fish barrel](https://oldschool.runescape.wiki/w/Fish_barrel) which displays the
 number of raw fish stored inside.
 
+![Screenshot](screenshot.png)
+
 ## Limitations
 
 - Picking raw fish from the ground straight into an open barrel is not yet supported.
