@@ -34,7 +34,7 @@ import net.runelite.client.config.ConfigManager;
 @Slf4j
 public class LastSeenDao
 {
-	public static final String CONFIG_GROUP = "lastSeen";
+	public static final String CONFIG_GROUP = "lastSeenOnline";
 	public static final String KEY_PREFIX = "lastSeen_";
 
 	private final ConfigManager configManager;
