@@ -54,23 +54,24 @@ public class LastSeenDao
 			return cache.get(displayName);
 		}
 
+		log.debug("Fetching 'last seen' for player {}", displayName);
 		final String entry = configManager.getConfiguration(CONFIG_GROUP, KEY_PREFIX + displayName);
-		if (entry == null)
+		if (entry != null)
 		{
-			return null;
+			try
+			{
+				final long timestampMillis = Long.parseLong(entry);
+				cache.put(displayName, timestampMillis);
+				return timestampMillis;
+			}
+			catch (NumberFormatException e)
+			{
+				log.info("Invalid value stored as 'last seen' for player {}: {}", displayName, entry);
+			}
 		}
 
-		try
-		{
-			final long timestampMillis = Long.parseLong(entry);
-			cache.put(displayName, timestampMillis);
-			return timestampMillis;
-		}
-		catch (NumberFormatException e)
-		{
-			log.info("Invalid value stored as 'last seen' for player " + displayName + ": " + entry, e);
-			return null;
-		}
+		cache.put(displayName, null);
+		return null;
 	}
 
 	public void setLastSeen(String displayName, long timestampMillis)
