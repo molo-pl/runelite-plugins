@@ -92,6 +92,7 @@ public class LastSeenDao
 
 	public void migrateLastSeen(String oldDisplayName, String newDisplayName)
 	{
+		log.debug("Migrating 'last seen' after player rename from {} to {}", oldDisplayName, newDisplayName);
 		final Long lastSeen = getLastSeen(oldDisplayName);
 		if (lastSeen != null)
 		{

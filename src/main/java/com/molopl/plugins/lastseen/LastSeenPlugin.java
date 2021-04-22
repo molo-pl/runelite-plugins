@@ -98,7 +98,7 @@ public class LastSeenPlugin extends Plugin
 	public void onNameableNameChanged(NameableNameChanged event)
 	{
 		final Nameable nameable = event.getNameable();
-		if (nameable instanceof Friend && nameable.getPrevName() != null)
+		if (nameable instanceof Friend && StringUtils.isNotBlank(nameable.getPrevName()))
 		{
 			dao.migrateLastSeen(
 				Text.toJagexName(nameable.getPrevName()),
