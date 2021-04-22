@@ -84,12 +84,14 @@ public class LastSeenPlugin extends Plugin
 	protected void shutDown()
 	{
 		overlayManager.remove(overlay);
+		dao.clearCache();
 	}
 
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
 		persistLastSeen();
+		dao.clearCache();
 	}
 
 	@Subscribe

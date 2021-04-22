@@ -98,4 +98,9 @@ public class LastSeenDao
 			deleteLastSeen(oldDisplayName);
 		}
 	}
+
+	public void clearCache()
+	{
+		cache.clear();
+	}
 }
