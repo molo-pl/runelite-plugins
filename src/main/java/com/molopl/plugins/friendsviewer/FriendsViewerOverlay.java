@@ -24,7 +24,6 @@
  */
 package com.molopl.plugins.friendsviewer;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.util.LinkedHashMap;
@@ -39,9 +38,6 @@ import net.runelite.client.ui.overlay.components.TitleComponent;
 
 public class FriendsViewerOverlay extends OverlayPanel
 {
-	private static final Color SAME_WORLD_COLOR = new Color(0, 255, 0);
-	private static final Color DIFFERENT_WORLD_COLOR = new Color(255, 255, 0);
-
 	private final Client client;
 	private final FriendsViewerConfig config;
 
@@ -68,7 +64,7 @@ public class FriendsViewerOverlay extends OverlayPanel
 			.forEach(entry -> panelComponent.getChildren().add(LineComponent.builder()
 				.left(entry.getKey())
 				.right("W" + entry.getValue())
-				.rightColor(entry.getValue() == client.getWorld() ? SAME_WORLD_COLOR : DIFFERENT_WORLD_COLOR)
+				.rightColor(entry.getValue() == client.getWorld() ? config.sameWorldColor() : config.differentWorldColor())
 				.build()));
 
 		return super.render(graphics);

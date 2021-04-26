@@ -24,9 +24,11 @@
  */
 package com.molopl.plugins.friendsviewer;
 
+import java.awt.Color;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 
 @ConfigGroup(FriendsViewerConfig.CONFIG_GROUP)
 public interface FriendsViewerConfig extends Config
@@ -36,10 +38,42 @@ public interface FriendsViewerConfig extends Config
 	@ConfigItem(
 		keyName = "maxFriends",
 		name = "Max Friends",
-		description = "Maximum number of online friends to display"
+		description = "Maximum number of friends to show on the overlay",
+		position = 1
 	)
 	default int maxFriends()
 	{
 		return 10;
+	}
+
+	@ConfigSection(
+		name = "Overlay Colors",
+		description = "Overlay colors",
+		position = 2
+	)
+	String colorSection = "colorSection";
+
+	@ConfigItem(
+		keyName = "sameWorldColor",
+		name = "Same World Color",
+		description = "The color for highlighting the same world as currently logged in to",
+		position = 1,
+		section = colorSection
+	)
+	default Color sameWorldColor()
+	{
+		return Color.GREEN;
+	}
+
+	@ConfigItem(
+		keyName = "differentWorldColor",
+		name = "Different World Color",
+		description = "The color for different worlds than currently logged in to",
+		position = 2,
+		section = colorSection
+	)
+	default Color differentWorldColor()
+	{
+		return Color.YELLOW;
 	}
 }
