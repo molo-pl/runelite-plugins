@@ -141,25 +141,19 @@ public class LastSeenPlugin extends Plugin
 			persistLastSeen();
 		}
 
-		// update in-memory state every few seconds
-		if (client.getTickCount() % 5 == 0)
+		final NameableContainer<Friend> friendContainer = client.getFriendContainer();
+		if (friendContainer == null)
 		{
-			final NameableContainer<Friend> friendContainer = client.getFriendContainer();
-			if (friendContainer == null)
-			{
-				return;
-			}
-
-			currentlyOnline.clear();
-			Arrays.stream(friendContainer.getMembers())
-				.filter(friend -> friend.getWorld() > 0)
-				.map(Friend::getName)
-				.map(Text::toJagexName)
-				.forEach(currentlyOnline::add);
-
-			final long currentTimeMillis = System.currentTimeMillis();
-			currentlyOnline.forEach(displayName -> lastSeenBuffer.put(displayName, currentTimeMillis));
+			return;
 		}
+
+		currentlyOnline.clear();
+		Arrays.stream(friendContainer.getMembers())
+			.filter(friend -> friend.getWorld() > 0)
+			.forEach(friend -> currentlyOnline.add(Text.toJagexName(friend.getName())));
+
+		final long currentTimeMillis = System.currentTimeMillis();
+		currentlyOnline.forEach(displayName -> lastSeenBuffer.put(displayName, currentTimeMillis));
 	}
 
 	private void persistLastSeen()
