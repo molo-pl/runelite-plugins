@@ -26,10 +26,10 @@ package com.molopl.plugins.friendsviewer;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.inject.Inject;
 import lombok.Getter;
+import lombok.Setter;
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -42,7 +42,8 @@ public class FriendsViewerOverlay extends OverlayPanel
 	private final FriendsViewerConfig config;
 
 	@Getter
-	private final Map<String, Integer> friends = new LinkedHashMap<>();
+	@Setter
+	private Map<String, Integer> friends;
 
 	@Inject
 	public FriendsViewerOverlay(Client client, FriendsViewerConfig config)
@@ -55,6 +56,11 @@ public class FriendsViewerOverlay extends OverlayPanel
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		if (friends == null)
+		{
+			return null;
+		}
+
 		panelComponent.getChildren().add(TitleComponent.builder()
 			.text(String.format("%d %s online", friends.size(), friends.size() == 1 ? "friend" : "friends"))
 			.build());

@@ -26,6 +26,7 @@ package com.molopl.plugins.friendsviewer;
 
 import com.google.inject.Provides;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ import net.runelite.api.Client;
 import net.runelite.api.Friend;
 import net.runelite.api.GameState;
 import net.runelite.api.NameableContainer;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -76,6 +78,12 @@ public class FriendsViewerPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		overlay.setFriends(null);
+	}
+
+	@Subscribe
 	public void onGameTick(GameTick event)
 	{
 		if (client.getGameState() != GameState.LOGGED_IN)
@@ -89,10 +97,10 @@ public class FriendsViewerPlugin extends Plugin
 			return;
 		}
 
-		final Map<String, Integer> friends = overlay.getFriends();
-		friends.clear();
+		final Map<String, Integer> friends = new LinkedHashMap<>();
 		Arrays.stream(friendContainer.getMembers())
 			.filter(friend -> friend.getWorld() > 0)
 			.forEach(friend -> friends.put(Text.toJagexName(friend.getName()), friend.getWorld()));
+		overlay.setFriends(friends);
 	}
 }
