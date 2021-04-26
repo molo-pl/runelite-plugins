@@ -49,7 +49,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @PluginDescriptor(
 	name = "Life-Saving Jewellery",
-	description = "Adds infoboxes and notifications for Phoenix necklace and Ring of life",
+	description = "Infoboxes and notifications for Phoenix necklace and Ring of life",
 	tags = {"phoenix", "necklace", "ring", "life"}
 )
 public class LifeSavingPlugin extends Plugin
