@@ -1,6 +1,6 @@
 # Last Seen Online
 
-Allows you to check when was the last time you've seen your friends online.
+Allows you to track when was the last time you've seen your friends play.
 
 ![Screenshot](screenshot.png)
 

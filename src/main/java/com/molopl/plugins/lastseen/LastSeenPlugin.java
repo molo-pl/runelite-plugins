@@ -53,7 +53,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @PluginDescriptor(
 	name = "Last Seen Online",
-	description = "Check when you've last seen your friends online",
+	description = "Track when you've last seen your friends play",
 	tags = {"last", "seen", "online", "friends", "activity", "watch"}
 )
 public class LastSeenPlugin extends Plugin
