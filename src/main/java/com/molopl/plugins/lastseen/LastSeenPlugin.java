@@ -42,7 +42,6 @@ import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.NameableNameChanged;
 import net.runelite.api.events.RemovedFriend;
 import net.runelite.api.widgets.WidgetInfo;
-import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -60,8 +59,6 @@ public class LastSeenPlugin extends Plugin
 {
 	@Inject
 	private Client client;
-	@Inject
-	private ClientThread clientThread;
 	@Inject
 	private OverlayManager overlayManager;
 
@@ -147,24 +144,21 @@ public class LastSeenPlugin extends Plugin
 		// update in-memory state every few seconds
 		if (client.getTickCount() % 5 == 0)
 		{
-			clientThread.invokeLater(() ->
+			final NameableContainer<Friend> friendContainer = client.getFriendContainer();
+			if (friendContainer == null)
 			{
-				final NameableContainer<Friend> friendContainer = client.getFriendContainer();
-				if (friendContainer == null)
-				{
-					return;
-				}
+				return;
+			}
 
-				currentlyOnline.clear();
-				Arrays.stream(friendContainer.getMembers())
-					.filter(friend -> friend.getWorld() > 0)
-					.map(Friend::getName)
-					.map(Text::toJagexName)
-					.forEach(currentlyOnline::add);
+			currentlyOnline.clear();
+			Arrays.stream(friendContainer.getMembers())
+				.filter(friend -> friend.getWorld() > 0)
+				.map(Friend::getName)
+				.map(Text::toJagexName)
+				.forEach(currentlyOnline::add);
 
-				final long currentTimeMillis = System.currentTimeMillis();
-				currentlyOnline.forEach(displayName -> lastSeenBuffer.put(displayName, currentTimeMillis));
-			});
+			final long currentTimeMillis = System.currentTimeMillis();
+			currentlyOnline.forEach(displayName -> lastSeenBuffer.put(displayName, currentTimeMillis));
 		}
 	}
 
