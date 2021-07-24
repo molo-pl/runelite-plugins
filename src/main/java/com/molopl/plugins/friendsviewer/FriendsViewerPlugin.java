@@ -25,29 +25,46 @@
 package com.molopl.plugins.friendsviewer;
 
 import com.google.inject.Provides;
+import static com.molopl.plugins.friendsviewer.FriendsViewerOverlay.ICON_HEIGHT;
+import static com.molopl.plugins.friendsviewer.FriendsViewerOverlay.ICON_WIDTH;
+import java.awt.image.BufferedImage;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Friend;
+import net.runelite.api.FriendsChatManager;
+import net.runelite.api.FriendsChatMember;
+import net.runelite.api.FriendsChatRank;
 import net.runelite.api.GameState;
 import net.runelite.api.NameableContainer;
+import net.runelite.api.Player;
+import net.runelite.api.clan.ClanChannel;
+import net.runelite.api.clan.ClanChannelMember;
+import net.runelite.api.clan.ClanSettings;
+import net.runelite.api.clan.ClanTitle;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.ChatIconManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Friend List Viewer",
-	description = "Adds an overlay showing currently online friends",
-	tags = {"friends", "list", "viewer", "online"}
+	name = "Friends and Clan Viewer",
+	description = "Always see clanmates and friends when they are online",
+	tags = {"friends", "list", "viewer", "online", "clan", "cc"}
 )
 public class FriendsViewerPlugin extends Plugin
 {
@@ -55,20 +72,41 @@ public class FriendsViewerPlugin extends Plugin
 	private Client client;
 	@Inject
 	private OverlayManager overlayManager;
+	@Inject
+	private ChatIconManager chatIconManager;
 
 	@Inject
-	private FriendsViewerOverlay overlay;
+	private FriendsViewerConfig config;
+
+	private final Map<FriendsChatRank, BufferedImage> chatChannelRankCache = new EnumMap<>(FriendsChatRank.class);
+	private final Map<ClanTitle, BufferedImage> clanRankCache = new HashMap<>();
+
+	private FriendsViewerOverlay friendsOverlay;
+	private FriendsViewerOverlay chatChannelOverlay;
+	private FriendsViewerOverlay yourClanOverlay;
+	private FriendsViewerOverlay guestClanOverlay;
 
 	@Override
 	protected void startUp()
 	{
-		overlayManager.add(overlay);
+		friendsOverlay = new FriendsViewerOverlay(client, config, "Friends", config::showFriends);
+		chatChannelOverlay = new FriendsViewerOverlay(client, config, "Chat-channel", config::showChatChannel);
+		yourClanOverlay = new FriendsViewerOverlay(client, config, "Your Clan", config::showYourClan);
+		guestClanOverlay = new FriendsViewerOverlay(client, config, "Guest Clan", config::showGuestClan);
+
+		overlayManager.add(friendsOverlay);
+		overlayManager.add(chatChannelOverlay);
+		overlayManager.add(yourClanOverlay);
+		overlayManager.add(guestClanOverlay);
 	}
 
 	@Override
 	protected void shutDown()
 	{
-		overlayManager.remove(overlay);
+		overlayManager.remove(friendsOverlay);
+		overlayManager.remove(chatChannelOverlay);
+		overlayManager.remove(yourClanOverlay);
+		overlayManager.remove(guestClanOverlay);
 	}
 
 	@Provides
@@ -80,27 +118,92 @@ public class FriendsViewerPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		overlay.setFriends(null);
+		friendsOverlay.setEntries(null);
+		chatChannelOverlay.setEntries(null);
+		yourClanOverlay.setEntries(null);
+		guestClanOverlay.setEntries(null);
 	}
 
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		if (client.getGameState() != GameState.LOGGED_IN)
+		if (client.getGameState() != GameState.LOGGED_IN || client.getTickCount() % 5 != 0)
 		{
 			return;
 		}
 
+		updateFriends(config.showFriends());
+		updateChatChannel(config.showChatChannel());
+		updateClan(config.showYourClan(), yourClanOverlay, client.getClanChannel(), client.getClanSettings());
+		updateClan(config.showGuestClan(), guestClanOverlay, client.getGuestClanChannel(), client.getGuestClanSettings());
+	}
+
+	private void updateFriends(boolean enabled)
+	{
 		final NameableContainer<Friend> friendContainer = client.getFriendContainer();
-		if (friendContainer == null)
+		if (!enabled || friendContainer == null)
 		{
+			friendsOverlay.setEntries(null);
 			return;
 		}
 
-		final Map<String, Integer> friends = new LinkedHashMap<>();
-		Arrays.stream(friendContainer.getMembers())
+		friendsOverlay.setEntries(Arrays.stream(friendContainer.getMembers())
 			.filter(friend -> friend.getWorld() > 0)
-			.forEach(friend -> friends.put(Text.toJagexName(friend.getName()), friend.getWorld()));
-		overlay.setFriends(friends);
+			.sorted(Comparator.comparing(Friend::getName, String::compareToIgnoreCase))
+			.map(friend -> new FriendsViewerEntry(Text.toJagexName(friend.getName()), friend.getWorld(), null))
+			.collect(Collectors.toList()));
+	}
+
+	private void updateChatChannel(boolean enabled)
+	{
+		final FriendsChatManager friendsChatManager = client.getFriendsChatManager();
+		if (!enabled || friendsChatManager == null)
+		{
+			chatChannelOverlay.setEntries(null);
+			return;
+		}
+
+		chatChannelOverlay.setEntries(Arrays.stream(friendsChatManager.getMembers())
+			.filter(clanmate -> !Text.toJagexName(clanmate.getName()).equals(getLocalPlayerName()))
+			.sorted(Comparator.comparing(FriendsChatMember::getRank).reversed()
+				.thenComparing(FriendsChatMember::getName, String::compareToIgnoreCase))
+			.map(clanmate -> new FriendsViewerEntry(
+				Text.toJagexName(clanmate.getName()),
+				clanmate.getWorld(),
+				chatChannelRankCache.computeIfAbsent(clanmate.getRank(), rank ->
+					Optional.ofNullable(chatIconManager.getRankImage(rank))
+						.map(image -> ImageUtil.resizeCanvas(image, ICON_WIDTH, ICON_HEIGHT))
+						.orElse(null))))
+			.collect(Collectors.toList()));
+	}
+
+	private void updateClan(boolean enabled, FriendsViewerOverlay overlay, ClanChannel clanChannel, ClanSettings clanSettings)
+	{
+		if (!enabled || clanChannel == null || clanSettings == null)
+		{
+			overlay.setEntries(null);
+			return;
+		}
+
+		overlay.setEntries(clanChannel.getMembers().stream()
+			.filter(clanmate -> !Text.toJagexName(clanmate.getName()).equals(getLocalPlayerName()))
+			.sorted(Comparator.comparing(ClanChannelMember::getRank).reversed()
+				.thenComparing(ClanChannelMember::getName, String::compareToIgnoreCase))
+			.map(clanmate -> new FriendsViewerEntry(
+				Text.toJagexName(clanmate.getName()),
+				clanmate.getWorld(),
+				clanRankCache.computeIfAbsent(clanSettings.titleForRank(clanmate.getRank()), rank ->
+					Optional.ofNullable(chatIconManager.getRankImage(rank))
+						.map(image -> ImageUtil.resizeCanvas(image, ICON_WIDTH, ICON_HEIGHT))
+						.orElse(null))))
+			.collect(Collectors.toList()));
+	}
+
+	private String getLocalPlayerName()
+	{
+		return Optional.ofNullable(client.getLocalPlayer())
+			.map(Player::getName)
+			.map(Text::toJagexName)
+			.orElse(null);
 	}
 }

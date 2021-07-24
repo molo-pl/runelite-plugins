@@ -1,5 +1,13 @@
-# Friend List Viewer
+# Friends and Clan Viewer
 
-Adds an overlay showing a list of currently logged in friends and the worlds they are playing on.
+This plugin provides overlays for showing clanmates and friends which are currently online.
+
+Works for:
+- Friends
+- Chat-channel
+- Your Clan
+- Guest clan
+
+Each overlay can be enabled or disabled independently.
 
 ![Screenshot](screenshot.png)

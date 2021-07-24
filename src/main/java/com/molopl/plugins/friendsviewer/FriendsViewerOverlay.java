@@ -26,53 +26,91 @@ package com.molopl.plugins.friendsviewer;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.util.Map;
-import javax.inject.Inject;
+import java.util.List;
+import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.ui.overlay.components.ComponentConstants;
+import net.runelite.client.ui.overlay.components.ComponentOrientation;
+import net.runelite.client.ui.overlay.components.ImageComponent;
+import net.runelite.client.ui.overlay.components.LayoutableRenderableEntity;
 import net.runelite.client.ui.overlay.components.LineComponent;
+import net.runelite.client.ui.overlay.components.SplitComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 
 public class FriendsViewerOverlay extends OverlayPanel
 {
+	public static final int ICON_WIDTH = 14;
+	public static final int ICON_HEIGHT = 18;
+
 	private final Client client;
 	private final FriendsViewerConfig config;
+	private final String title;
+	private final Supplier<Boolean> enabled;
 
 	@Getter
 	@Setter
-	private Map<String, Integer> friends;
+	private List<FriendsViewerEntry> entries;
 
-	@Inject
-	public FriendsViewerOverlay(Client client, FriendsViewerConfig config)
+	public FriendsViewerOverlay(Client client, FriendsViewerConfig config, String title, Supplier<Boolean> enabled)
 	{
 		this.client = client;
 		this.config = config;
+		this.title = title;
+		this.enabled = enabled;
 		setPosition(OverlayPosition.TOP_RIGHT);
+		panelComponent.setPreferredSize(new Dimension(ComponentConstants.STANDARD_WIDTH + ICON_WIDTH, 0));
+	}
+
+	@Override
+	public String getName()
+	{
+		return super.getName() + "-" + title;
 	}
 
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (friends == null)
+		if (entries == null || !enabled.get())
 		{
 			return null;
 		}
 
 		panelComponent.getChildren().add(TitleComponent.builder()
-			.text(String.format("%d %s online", friends.size(), friends.size() == 1 ? "friend" : "friends"))
+			.text(String.format("%s (%d)", title, entries.size()))
 			.build());
 
-		friends.entrySet().stream()
-			.limit(config.maxFriends())
-			.forEach(entry -> panelComponent.getChildren().add(LineComponent.builder()
-				.left(entry.getKey())
-				.right("W" + entry.getValue())
-				.rightColor(entry.getValue() == client.getWorld() ? config.sameWorldColor() : config.differentWorldColor())
-				.build()));
+		entries.stream()
+			.limit(config.maxPlayers())
+			.map(this::toRenderableEntity)
+			.forEach(panelComponent.getChildren()::add);
+
+		if (entries.size() > config.maxPlayers())
+		{
+			panelComponent.getChildren().add(TitleComponent.builder()
+				.text(String.format("... %d more", entries.size() - config.maxPlayers()))
+				.build());
+		}
 
 		return super.render(graphics);
+	}
+
+	private LayoutableRenderableEntity toRenderableEntity(FriendsViewerEntry entry)
+	{
+		final LineComponent line = LineComponent.builder()
+			.left(entry.getName())
+			.right("W" + entry.getWorld())
+			.rightColor(entry.getWorld() == client.getWorld() ? config.sameWorldColor() : config.differentWorldColor())
+			.build();
+		return entry.getIcon() != null ?
+			SplitComponent.builder()
+				.orientation(ComponentOrientation.HORIZONTAL)
+				.first(new ImageComponent(entry.getIcon()))
+				.second(line)
+				.build() :
+			line;
 	}
 }

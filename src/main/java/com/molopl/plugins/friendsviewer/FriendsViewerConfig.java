@@ -37,19 +37,74 @@ public interface FriendsViewerConfig extends Config
 
 	@ConfigItem(
 		keyName = "maxFriends",
-		name = "Max Friends",
-		description = "Maximum number of friends to show on the overlay",
+		name = "Max Players",
+		description = "Maximum number of friends or clanmates to show",
 		position = 1
 	)
-	default int maxFriends()
+	default int maxPlayers()
 	{
 		return 10;
 	}
 
 	@ConfigSection(
+		name = "Overlays",
+		description = "Overlays",
+		position = 2
+	)
+	String overlaysSection = "overlaysSection";
+
+	@ConfigItem(
+		keyName = "showFriends",
+		name = "Show Friends",
+		description = "Show or hide Friends overlay",
+		position = 1,
+		section = overlaysSection
+	)
+	default boolean showFriends()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showChatChannel",
+		name = "Show Chat-channel",
+		description = "Show or hide Chat-channel overlay",
+		position = 2,
+		section = overlaysSection
+	)
+	default boolean showChatChannel()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "showYourClan",
+		name = "Show Your Clan",
+		description = "Show or hide Your Clan overlay",
+		position = 3,
+		section = overlaysSection
+	)
+	default boolean showYourClan()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "showGuestClan",
+		name = "Show Guest Clan",
+		description = "Show or hide Guest Clan overlay",
+		position = 4,
+		section = overlaysSection
+	)
+	default boolean showGuestClan()
+	{
+		return false;
+	}
+
+	@ConfigSection(
 		name = "Overlay Colors",
 		description = "Overlay colors",
-		position = 2
+		position = 3
 	)
 	String colorSection = "colorSection";
 
