@@ -43,6 +43,7 @@ import net.runelite.api.clan.ClanChannelMember;
 import net.runelite.api.clan.ClanSettings;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -62,6 +63,8 @@ public class FriendsViewerPlugin extends Plugin
 	private Client client;
 	@Inject
 	private OverlayManager overlayManager;
+	@Inject
+	private ClientThread clientThread;
 
 	@Inject
 	private FriendsViewerIconManager iconManager;
@@ -76,6 +79,14 @@ public class FriendsViewerPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		clientThread.invokeLater(() ->
+		{
+			if (client.getGameState().getState() > GameState.STARTING.getState())
+			{
+				iconManager.loadRankIcons();
+			}
+		});
+
 		friendsOverlay = new FriendsViewerOverlay(client, config, "Friends", config::showFriends);
 		chatChannelOverlay = new FriendsViewerOverlay(client, config, "Chat-channel", config::showChatChannel);
 		yourClanOverlay = new FriendsViewerOverlay(client, config, "Your Clan", config::showYourClan);
@@ -109,6 +120,8 @@ public class FriendsViewerPlugin extends Plugin
 		{
 			return;
 		}
+
+		iconManager.loadRankIcons();
 
 		friendsOverlay.setEntries(null);
 		chatChannelOverlay.setEntries(null);

@@ -35,11 +35,7 @@ import net.runelite.api.Client;
 import net.runelite.api.EnumComposition;
 import net.runelite.api.EnumID;
 import net.runelite.api.FriendsChatRank;
-import net.runelite.api.GameState;
 import net.runelite.api.clan.ClanTitle;
-import net.runelite.api.events.GameStateChanged;
-import net.runelite.client.eventbus.EventBus;
-import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ChatIconManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.util.ImageUtil;
@@ -60,26 +56,16 @@ public class FriendsViewerIconManager
 	private BufferedImage[] clanRankImages;
 
 	@Inject
-	private FriendsViewerIconManager(Client client, SpriteManager spriteManager, EventBus eventBus)
+	private FriendsViewerIconManager(Client client, SpriteManager spriteManager)
 	{
 		this.client = client;
 		this.spriteManager = spriteManager;
-		eventBus.register(this);
-	}
-
-	@Subscribe
-	public void onGameStateChanged(GameStateChanged event)
-	{
-		if (event.getGameState() == GameState.LOGIN_SCREEN && friendsChatRankImages == null)
-		{
-			loadRankIcons();
-		}
 	}
 
 	@Nullable
 	public BufferedImage getRankImage(FriendsChatRank friendsChatRank)
 	{
-		if (friendsChatRank == FriendsChatRank.UNRANKED)
+		if (friendsChatRankImages == null || friendsChatRank == FriendsChatRank.UNRANKED)
 		{
 			return null;
 		}
@@ -90,13 +76,23 @@ public class FriendsViewerIconManager
 	@Nullable
 	public BufferedImage getRankImage(ClanTitle clanTitle)
 	{
+		if (clanRankImages == null)
+		{
+			return null;
+		}
+
 		int rank = clanTitle.getId();
 		int idx = clanRankToIdx(rank);
 		return clanRankImages[idx];
 	}
 
-	private void loadRankIcons()
+	public void loadRankIcons()
 	{
+		if (friendsChatRankImages != null)
+		{
+			return;
+		}
+
 		final EnumComposition friendsChatIcons = client.getEnum(EnumID.FRIENDS_CHAT_RANK_ICONS);
 		final EnumComposition clanIcons = client.getEnum(EnumID.CLAN_RANK_GRAPHIC);
 
