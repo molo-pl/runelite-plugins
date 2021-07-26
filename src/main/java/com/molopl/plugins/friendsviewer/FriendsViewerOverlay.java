@@ -26,6 +26,7 @@ package com.molopl.plugins.friendsviewer;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.util.List;
 import java.util.function.Supplier;
 import lombok.Getter;
@@ -107,6 +108,7 @@ public class FriendsViewerOverlay extends OverlayPanel
 				.orientation(ComponentOrientation.HORIZONTAL)
 				.first(new ImageComponent(entry.getIcon()))
 				.second(line)
+				.gap(new Point(1, 0))
 				.build() :
 			line;
 	}
