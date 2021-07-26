@@ -105,6 +105,11 @@ public class FriendsViewerPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
+		if (event.getGameState() != GameState.LOGIN_SCREEN)
+		{
+			return;
+		}
+
 		friendsOverlay.setEntries(null);
 		chatChannelOverlay.setEntries(null);
 		yourClanOverlay.setEntries(null);
