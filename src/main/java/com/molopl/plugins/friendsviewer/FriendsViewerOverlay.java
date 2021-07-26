@@ -43,9 +43,6 @@ import net.runelite.client.ui.overlay.components.TitleComponent;
 
 public class FriendsViewerOverlay extends OverlayPanel
 {
-	public static final int ICON_WIDTH = 14;
-	public static final int ICON_HEIGHT = 18;
-
 	private final Client client;
 	private final FriendsViewerConfig config;
 	private final String title;
@@ -62,7 +59,7 @@ public class FriendsViewerOverlay extends OverlayPanel
 		this.title = title;
 		this.enabled = enabled;
 		setPosition(OverlayPosition.TOP_RIGHT);
-		panelComponent.setPreferredSize(new Dimension(ComponentConstants.STANDARD_WIDTH + ICON_WIDTH, 0));
+		panelComponent.setPreferredSize(new Dimension(ComponentConstants.STANDARD_WIDTH + FriendsViewerIconManager.IMAGE_DIMENSION.width, 0));
 	}
 
 	@Override

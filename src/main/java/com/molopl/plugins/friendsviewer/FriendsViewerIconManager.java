@@ -28,6 +28,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import net.runelite.api.Client;
@@ -48,7 +49,7 @@ import net.runelite.client.util.ImageUtil;
  */
 public class FriendsViewerIconManager
 {
-	private static final Dimension IMAGE_DIMENSION = new Dimension(14, 14);
+	public static final Dimension IMAGE_DIMENSION = new Dimension(14, 14);
 	private static final Color IMAGE_OUTLINE_COLOR = new Color(33, 33, 33);
 	private static final int IMAGE_TOP_MARGIN = 2;
 
@@ -106,7 +107,7 @@ public class FriendsViewerIconManager
 		{
 			final int idx = i;
 			spriteManager.getSpriteAsync(friendsChatIcons.getIntValue(friendsChatIcons.getKeys()[i]), 0,
-				sprite -> friendsChatRankImages[idx] = friendsChatImageFromSprite(sprite));
+				sprite -> friendsChatRankImages[idx] = prepareImage(sprite, true));
 		}
 
 		for (int i = 0; i < clanIcons.size(); i++)
@@ -114,29 +115,25 @@ public class FriendsViewerIconManager
 			final int key = clanIcons.getKeys()[i];
 			final int idx = clanRankToIdx(key);
 			spriteManager.getSpriteAsync(clanIcons.getIntValue(key), 0,
-				sprite -> clanRankImages[idx] = clanImageFromSprite(sprite));
+				sprite -> clanRankImages[idx] = prepareImage(sprite, false));
 		}
 	}
 
-	private static BufferedImage friendsChatImageFromSprite(BufferedImage sprite)
+	private static BufferedImage prepareImage(BufferedImage sprite, boolean outline)
 	{
-		final BufferedImage resized = ImageUtil.resizeCanvas(sprite, IMAGE_DIMENSION.width, IMAGE_DIMENSION.height);
-		final BufferedImage outlined = ImageUtil.outlineImage(resized, IMAGE_OUTLINE_COLOR);
-		return addTopMargin(outlined);
+		return Optional.ofNullable(sprite)
+			.map(image -> ImageUtil.resizeCanvas(image, IMAGE_DIMENSION.width, IMAGE_DIMENSION.height))
+			.map(image -> outline ? ImageUtil.outlineImage(image, IMAGE_OUTLINE_COLOR) : image)
+			.map(FriendsViewerIconManager::addMargin)
+			.orElse(null);
 	}
 
-	private static BufferedImage clanImageFromSprite(BufferedImage sprite)
+	private static BufferedImage addMargin(BufferedImage sprite)
 	{
-		final BufferedImage resized = ImageUtil.resizeCanvas(sprite, IMAGE_DIMENSION.width, IMAGE_DIMENSION.height);
-		return addTopMargin(resized);
-	}
-
-	private static BufferedImage addTopMargin(BufferedImage image)
-	{
-		final BufferedImage newImage = new BufferedImage(image.getWidth(), image.getHeight() + IMAGE_TOP_MARGIN, BufferedImage.TYPE_INT_ARGB);
-		final Graphics2D g2d = newImage.createGraphics();
-		g2d.drawImage(image, 0, IMAGE_TOP_MARGIN, null);
-		g2d.dispose();
+		final BufferedImage newImage = new BufferedImage(sprite.getWidth(), sprite.getHeight() + IMAGE_TOP_MARGIN, BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D graphics = newImage.createGraphics();
+		graphics.drawImage(sprite, 0, IMAGE_TOP_MARGIN, null);
+		graphics.dispose();
 		return newImage;
 	}
 
