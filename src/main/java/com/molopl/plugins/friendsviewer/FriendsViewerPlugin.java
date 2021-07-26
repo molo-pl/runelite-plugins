@@ -25,14 +25,8 @@
 package com.molopl.plugins.friendsviewer;
 
 import com.google.inject.Provides;
-import static com.molopl.plugins.friendsviewer.FriendsViewerOverlay.ICON_HEIGHT;
-import static com.molopl.plugins.friendsviewer.FriendsViewerOverlay.ICON_WIDTH;
-import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -41,23 +35,19 @@ import net.runelite.api.Client;
 import net.runelite.api.Friend;
 import net.runelite.api.FriendsChatManager;
 import net.runelite.api.FriendsChatMember;
-import net.runelite.api.FriendsChatRank;
 import net.runelite.api.GameState;
 import net.runelite.api.NameableContainer;
 import net.runelite.api.Player;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanChannelMember;
 import net.runelite.api.clan.ClanSettings;
-import net.runelite.api.clan.ClanTitle;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.game.ChatIconManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
-import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
 @Slf4j
@@ -72,14 +62,11 @@ public class FriendsViewerPlugin extends Plugin
 	private Client client;
 	@Inject
 	private OverlayManager overlayManager;
-	@Inject
-	private ChatIconManager chatIconManager;
 
+	@Inject
+	private FriendsViewerIconManager iconManager;
 	@Inject
 	private FriendsViewerConfig config;
-
-	private final Map<FriendsChatRank, BufferedImage> chatChannelRankCache = new EnumMap<>(FriendsChatRank.class);
-	private final Map<ClanTitle, BufferedImage> clanRankCache = new HashMap<>();
 
 	private FriendsViewerOverlay friendsOverlay;
 	private FriendsViewerOverlay chatChannelOverlay;
@@ -170,10 +157,7 @@ public class FriendsViewerPlugin extends Plugin
 			.map(clanmate -> new FriendsViewerEntry(
 				Text.toJagexName(clanmate.getName()),
 				clanmate.getWorld(),
-				chatChannelRankCache.computeIfAbsent(clanmate.getRank(), rank ->
-					Optional.ofNullable(chatIconManager.getRankImage(rank))
-						.map(image -> ImageUtil.resizeCanvas(image, ICON_WIDTH, ICON_HEIGHT))
-						.orElse(null))))
+				iconManager.getRankImage(clanmate.getRank())))
 			.collect(Collectors.toList()));
 	}
 
@@ -192,10 +176,9 @@ public class FriendsViewerPlugin extends Plugin
 			.map(clanmate -> new FriendsViewerEntry(
 				Text.toJagexName(clanmate.getName()),
 				clanmate.getWorld(),
-				clanRankCache.computeIfAbsent(clanSettings.titleForRank(clanmate.getRank()), rank ->
-					Optional.ofNullable(chatIconManager.getRankImage(rank))
-						.map(image -> ImageUtil.resizeCanvas(image, ICON_WIDTH, ICON_HEIGHT))
-						.orElse(null))))
+				Optional.ofNullable(clanSettings.titleForRank(clanmate.getRank()))
+					.map(iconManager::getRankImage)
+					.orElse(null)))
 			.collect(Collectors.toList()));
 	}
 
