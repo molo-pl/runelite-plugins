@@ -49,6 +49,7 @@ public class FriendsViewerIconManager
 	private static final Color IMAGE_OUTLINE_COLOR = new Color(33, 33, 33);
 	private static final int IMAGE_TOP_MARGIN = 2;
 
+	private final ChatIconManager chatIconManager;
 	private final Client client;
 	private final SpriteManager spriteManager;
 
@@ -56,34 +57,60 @@ public class FriendsViewerIconManager
 	private BufferedImage[] clanRankImages;
 
 	@Inject
-	private FriendsViewerIconManager(Client client, SpriteManager spriteManager)
+	private FriendsViewerIconManager(ChatIconManager chatIconManager, Client client, SpriteManager spriteManager)
 	{
+		this.chatIconManager = chatIconManager;
 		this.client = client;
 		this.spriteManager = spriteManager;
 	}
 
 	@Nullable
-	public BufferedImage getRankImage(FriendsChatRank friendsChatRank)
+	public BufferedImage getRankImage(FriendsViewerFontSize fontSize, FriendsChatRank friendsChatRank)
 	{
-		if (friendsChatRankImages == null || friendsChatRank == FriendsChatRank.UNRANKED)
+		switch (fontSize)
 		{
-			return null;
+			case REGULAR:
+			{
+				return friendsChatRankImages != null && friendsChatRank != FriendsChatRank.UNRANKED
+					? friendsChatRankImages[friendsChatRank.ordinal() - 1]
+					: null;
+			}
+			case SMALL:
+			{
+				return chatIconManager.getRankImage(friendsChatRank);
+			}
+			default:
+			{
+				throw new UnsupportedOperationException("Unknown font size: " + fontSize);
+			}
 		}
-
-		return friendsChatRankImages[friendsChatRank.ordinal() - 1];
 	}
 
 	@Nullable
-	public BufferedImage getRankImage(ClanTitle clanTitle)
+	public BufferedImage getRankImage(FriendsViewerFontSize fontSize, ClanTitle clanTitle)
 	{
-		if (clanRankImages == null)
+		switch (fontSize)
 		{
-			return null;
-		}
+			case REGULAR:
+			{
+				if (clanRankImages == null)
+				{
+					return null;
+				}
 
-		int rank = clanTitle.getId();
-		int idx = clanRankToIdx(rank);
-		return clanRankImages[idx];
+				int rank = clanTitle.getId();
+				int idx = clanRankToIdx(rank);
+				return clanRankImages[idx];
+			}
+			case SMALL:
+			{
+				return chatIconManager.getRankImage(clanTitle);
+			}
+			default:
+			{
+				throw new UnsupportedOperationException("Unknown font size: " + fontSize);
+			}
+		}
 	}
 
 	public void loadRankIcons()

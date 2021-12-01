@@ -25,6 +25,7 @@
 package com.molopl.plugins.friendsviewer;
 
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.util.List;
@@ -32,6 +33,7 @@ import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.Client;
+import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.ComponentConstants;
@@ -99,7 +101,9 @@ public class FriendsViewerOverlay extends OverlayPanel
 	private LayoutableRenderableEntity toRenderableEntity(FriendsViewerEntry entry)
 	{
 		final LineComponent line = LineComponent.builder()
+			.leftFont(getFont(config.fontSize()))
 			.left(entry.getName())
+			.rightFont(getFont(config.fontSize()))
 			.right("W" + entry.getWorld())
 			.rightColor(entry.getWorld() == client.getWorld() ? config.sameWorldColor() : config.differentWorldColor())
 			.build();
@@ -111,5 +115,24 @@ public class FriendsViewerOverlay extends OverlayPanel
 				.gap(new Point(1, 0))
 				.build() :
 			line;
+	}
+
+	private Font getFont(FriendsViewerFontSize fontSize)
+	{
+		switch (fontSize)
+		{
+			case REGULAR:
+			{
+				return FontManager.getRunescapeFont();
+			}
+			case SMALL:
+			{
+				return FontManager.getRunescapeSmallFont();
+			}
+			default:
+			{
+				throw new UnsupportedOperationException("Unknown font size: " + config.fontSize());
+			}
+		}
 	}
 }

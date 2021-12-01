@@ -101,6 +101,18 @@ public interface FriendsViewerConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = "fontSize",
+		name = "Font Size",
+		description = "Font size to use on the overlay",
+		position = 5,
+		section = overlaysSection
+	)
+	default FriendsViewerFontSize fontSize()
+	{
+		return FriendsViewerFontSize.REGULAR;
+	}
+
 	@ConfigSection(
 		name = "Overlay Colors",
 		description = "Overlay colors",

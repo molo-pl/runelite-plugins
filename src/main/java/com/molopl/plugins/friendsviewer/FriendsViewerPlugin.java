@@ -175,7 +175,7 @@ public class FriendsViewerPlugin extends Plugin
 			.map(clanmate -> new FriendsViewerEntry(
 				Text.toJagexName(clanmate.getName()),
 				clanmate.getWorld(),
-				iconManager.getRankImage(clanmate.getRank())))
+				iconManager.getRankImage(config.fontSize(), clanmate.getRank())))
 			.collect(Collectors.toList()));
 	}
 
@@ -195,7 +195,7 @@ public class FriendsViewerPlugin extends Plugin
 				Text.toJagexName(clanmate.getName()),
 				clanmate.getWorld(),
 				Optional.ofNullable(clanSettings.titleForRank(clanmate.getRank()))
-					.map(iconManager::getRankImage)
+					.map(title -> iconManager.getRankImage(config.fontSize(), title))
 					.orElse(null)))
 			.collect(Collectors.toList()));
 	}
