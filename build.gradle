@@ -27,7 +27,7 @@ dependencies {
 }
 
 group = 'com.molopl.plugins'
-version = '2.2'
+version = '2.3-SNAPSHOT'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {
