@@ -40,6 +40,7 @@ import net.runelite.api.NameableContainer;
 import net.runelite.api.Player;
 import net.runelite.api.clan.ClanChannel;
 import net.runelite.api.clan.ClanChannelMember;
+import net.runelite.api.clan.ClanRank;
 import net.runelite.api.clan.ClanSettings;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -189,7 +190,7 @@ public class FriendsViewerPlugin extends Plugin
 
 		overlay.setEntries(clanChannel.getMembers().stream()
 			.filter(clanmate -> !Text.toJagexName(clanmate.getName()).equals(getLocalPlayerName()))
-			.sorted(Comparator.comparing(ClanChannelMember::getRank).reversed()
+			.sorted(Comparator.comparing(ClanChannelMember::getRank, Comparator.comparing(ClanRank::getRank)).reversed()
 				.thenComparing(ClanChannelMember::getName, String::compareToIgnoreCase))
 			.map(clanmate -> new FriendsViewerEntry(
 				Text.toJagexName(clanmate.getName()),
