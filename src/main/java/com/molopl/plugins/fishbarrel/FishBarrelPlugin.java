@@ -76,7 +76,7 @@ public class FishBarrelPlugin extends Plugin
 
 	// regex to recognize a chat message as an indicator of a caught fish
 	private static final Pattern FISH_CAUGHT_MESSAGE = Pattern.compile(
-		"^You catch (an?|some) ([a-zA-Z ]+)[.!]( It hardens as you handle it with your ice gloves\\.)?$");
+		"^You catch (an?|some)(?: raw)? ([a-zA-Z ]+)[.!]?( It hardens as you handle it with your ice gloves\\.)?$");
 
 	private static final String RADA_DOUBLE_CATCH_MESSAGE = "Rada's blessing enabled you to catch an extra fish.";
 	private static final String FLAKES_DOUBLE_CATCH_MESSAGE = "The spirit flakes enabled you to catch an extra fish.";
