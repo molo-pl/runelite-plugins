@@ -354,30 +354,12 @@ public class FishBarrelPlugin extends Plugin
 		int itemId = -1;
 		switch (event.getMenuAction())
 		{
-			case ITEM_FIRST_OPTION:
-			case ITEM_SECOND_OPTION:
-			case ITEM_THIRD_OPTION:
-			case ITEM_FOURTH_OPTION:
-			case ITEM_FIFTH_OPTION:
-				itemId = event.getId();
-				break;
-
 			case CC_OP:
 			case CC_OP_LOW_PRIORITY:
 				Widget widget = event.getWidget();
 				if (widget != null)
 				{
-					int child = event.getActionParam();
-					if (child == -1)
-					{
-						return;
-					}
-
-					widget = widget.getChild(child);
-					if (widget != null)
-					{
-						itemId = widget.getItemId();
-					}
+					itemId = widget.getItemId();
 				}
 				break;
 
