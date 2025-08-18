@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, molo-pl <https://github.com/molo-pl>
+ * Copyright (c) 2025, molo-pl <https://github.com/molo-pl>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,14 +24,15 @@
  */
 package com.molopl.plugins.fishbarrel;
 
+import net.runelite.api.widgets.WidgetItem;
+import net.runelite.client.ui.overlay.WidgetItemOverlay;
+import net.runelite.client.ui.overlay.components.TextComponent;
+
+import javax.inject.Inject;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
-import javax.inject.Inject;
-import net.runelite.api.widgets.WidgetItem;
-import net.runelite.client.ui.overlay.WidgetItemOverlay;
-import net.runelite.client.ui.overlay.components.TextComponent;
 
 public class FishBarrelOverlay extends WidgetItemOverlay
 {

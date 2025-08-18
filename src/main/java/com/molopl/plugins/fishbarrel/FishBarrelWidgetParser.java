@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, molo-pl <https://github.com/molo-pl>
+ * Copyright (c) 2025, molo-pl <https://github.com/molo-pl>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,9 +24,10 @@
  */
 package com.molopl.plugins.fishbarrel;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * A parser for messages from chat box widgets, for obtaining the contents of the fish barrel.

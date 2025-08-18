@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, molo-pl <https://github.com/molo-pl>
+ * Copyright (c) 2025, molo-pl <https://github.com/molo-pl>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,10 +25,11 @@
 package com.molopl.plugins.fishbarrel;
 
 import com.google.common.collect.ImmutableList;
-import java.util.Collection;
 import lombok.Getter;
 import lombok.Setter;
-import net.runelite.api.ItemID;
+import net.runelite.api.gameval.ItemID;
+
+import java.util.Collection;
 
 public enum FishBarrel
 {
@@ -37,15 +38,15 @@ public enum FishBarrel
 	public static final int CAPACITY = 28;
 
 	public static final Collection<Integer> BARREL_IDS = ImmutableList.of(
-		ItemID.FISH_BARREL,
-		ItemID.OPEN_FISH_BARREL,
-		ItemID.FISH_SACK_BARREL,
-		ItemID.OPEN_FISH_SACK_BARREL
+		ItemID.FISH_BARREL_CLOSED,
+		ItemID.FISH_BARREL_OPEN,
+		ItemID.FISH_SACK_BARREL_CLOSED,
+		ItemID.FISH_SACK_BARREL_OPEN
 	);
 
 	public static final Collection<Integer> OPEN_BARREL_IDS = ImmutableList.of(
-		ItemID.OPEN_FISH_BARREL,
-		ItemID.OPEN_FISH_SACK_BARREL
+		ItemID.FISH_BARREL_OPEN,
+		ItemID.FISH_SACK_BARREL_OPEN
 	);
 
 	@Getter

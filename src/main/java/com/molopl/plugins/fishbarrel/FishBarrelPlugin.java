@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, molo-pl <https://github.com/molo-pl>
+ * Copyright (c) 2025, molo-pl <https://github.com/molo-pl>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,15 +29,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -45,7 +36,6 @@ import net.runelite.api.GameState;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.ItemID;
 import net.runelite.api.Skill;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
@@ -54,14 +44,23 @@ import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.api.widgets.Widget;
-import static net.runelite.api.widgets.WidgetInfo.TO_CHILD;
-import static net.runelite.api.widgets.WidgetInfo.TO_GROUP;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
+
+import javax.inject.Inject;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @PluginDescriptor(
@@ -88,8 +87,8 @@ public class FishBarrelPlugin extends Plugin
 	// maps the name of the fish as it appears in chat message to corresponding item ID
 	private static final Map<String, Integer> FISH_TYPES_BY_NAME = ImmutableMap.<String, Integer>builder()
 		// singular 'shrimp' may occur when fishing for Karambwanji
-		.put("shrimp", ItemID.RAW_SHRIMPS)
-		.put("shrimps", ItemID.RAW_SHRIMPS)
+		.put("shrimp", ItemID.RAW_SHRIMP)
+		.put("shrimps", ItemID.RAW_SHRIMP)
 		.put("sardine", ItemID.RAW_SARDINE)
 		.put("herring", ItemID.RAW_HERRING)
 		.put("anchovies", ItemID.RAW_ANCHOVIES)
@@ -97,39 +96,39 @@ public class FishBarrelPlugin extends Plugin
 		.put("trout", ItemID.RAW_TROUT)
 		.put("cod", ItemID.RAW_COD)
 		.put("pike", ItemID.RAW_PIKE)
-		.put("slimy swamp eel", ItemID.RAW_SLIMY_EEL)
+		.put("slimy swamp eel", ItemID.MORT_SLIMEY_EEL)
 		.put("salmon", ItemID.RAW_SALMON)
 		.put("tuna", ItemID.RAW_TUNA)
-		.put("rainbow fish", ItemID.RAW_RAINBOW_FISH)
+		.put("rainbow fish", ItemID.HUNTING_RAW_FISH_SPECIAL)
 		.put("cave eel", ItemID.RAW_CAVE_EEL)
 		.put("lobster", ItemID.RAW_LOBSTER)
 		.put("bass", ItemID.RAW_BASS)
-		.put("leaping trout", ItemID.LEAPING_TROUT)
+		.put("leaping trout", ItemID.BRUT_SPAWNING_TROUT)
 		.put("swordfish", ItemID.RAW_SWORDFISH)
 		.put("lava eel", ItemID.RAW_LAVA_EEL)
-		.put("leaping salmon", ItemID.LEAPING_SALMON)
+		.put("leaping salmon", ItemID.BRUT_SPAWNING_SALMON)
 		.put("monkfish", ItemID.RAW_MONKFISH)
-		.put("Karambwan", ItemID.RAW_KARAMBWAN)
-		.put("leaping sturgeon", ItemID.LEAPING_STURGEON)
+		.put("Karambwan", ItemID.TBWT_RAW_KARAMBWAN)
+		.put("leaping sturgeon", ItemID.BRUT_STURGEON)
 		.put("shark", ItemID.RAW_SHARK)
 		.put("infernal eel", ItemID.INFERNAL_EEL)
 		.put("anglerfish", ItemID.RAW_ANGLERFISH)
 		.put("dark crab", ItemID.RAW_DARK_CRAB)
-		.put("sacred eel", ItemID.SACRED_EEL)
+		.put("sacred eel", ItemID.SNAKEBOSS_EEL)
 		.build();
 
 	// a set of possible fish caught with a cormorant on Molch island
 	private static final Set<Integer> MOLCH_ISLAND_FISH_TYPES = ImmutableSet.of(
-		ItemID.BLUEGILL,
-		ItemID.COMMON_TENCH,
-		ItemID.MOTTLED_EEL,
-		ItemID.GREATER_SIREN
+		ItemID.AERIAL_FISHING_BLUEGILL,
+		ItemID.AERIAL_FISHING_COMMON_TENCH,
+		ItemID.AERIAL_FISHING_MOTTLED_EEL,
+		ItemID.AERIAL_FISHING_GREATER_SIREN
 	);
 
 	// other fish type which may not be directly caught, but can be put into the barrel
 	private static final Set<Integer> OTHER_FISH_TYPES = ImmutableSet.of(
-		ItemID.RAW_SEA_TURTLE,
-		ItemID.RAW_MANTA_RAY
+		ItemID.RAW_SEATURTLE,
+		ItemID.RAW_MANTARAY
 	);
 
 	private static final Set<Integer> ALL_FISH_TYPES = ImmutableSet.<Integer>builder()
@@ -365,8 +364,7 @@ public class FishBarrelPlugin extends Plugin
 
 			case CC_OP:
 			case CC_OP_LOW_PRIORITY:
-				int widgetId = event.getWidgetId();
-				Widget widget = client.getWidget(TO_GROUP(widgetId), TO_CHILD(widgetId));
+				Widget widget = event.getWidget();
 				if (widget != null)
 				{
 					int child = event.getActionParam();

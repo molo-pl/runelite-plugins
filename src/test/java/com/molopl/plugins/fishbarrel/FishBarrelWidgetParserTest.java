@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, molo-pl <https://github.com/molo-pl>
+ * Copyright (c) 2025, molo-pl <https://github.com/molo-pl>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,9 @@
  */
 package com.molopl.plugins.fishbarrel;
 
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class FishBarrelWidgetParserTest
 {
