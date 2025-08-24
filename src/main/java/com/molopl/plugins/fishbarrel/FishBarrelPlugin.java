@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
+import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -47,6 +48,7 @@ import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -165,6 +167,12 @@ public class FishBarrelPlugin extends Plugin
 
 	// a map of last game ticks in which user performed an action on the barrel
 	private final Map<FishBarrelAction, Integer> barrelActions = new HashMap<>();
+
+	@Provides
+	public FishBarrelConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(FishBarrelConfig.class);
+	}
 
 	@Override
 	public void startUp()

@@ -24,40 +24,24 @@
  */
 package com.molopl.plugins.fishbarrel;
 
-import net.runelite.api.widgets.WidgetItem;
-import net.runelite.client.ui.overlay.WidgetItemOverlay;
-import net.runelite.client.ui.overlay.components.TextComponent;
+import net.runelite.client.config.Config;
+import net.runelite.client.config.ConfigGroup;
+import net.runelite.client.config.ConfigItem;
 
-import javax.inject.Inject;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
+import java.awt.Color;
 
-public class FishBarrelOverlay extends WidgetItemOverlay
-{
-	private final FishBarrelConfig config;
+@ConfigGroup(FishBarrelConfig.CONFIG_GROUP)
+public interface FishBarrelConfig extends Config {
+    String CONFIG_GROUP = "fishBarrel";
 
-	@Inject
-	public FishBarrelOverlay(FishBarrelConfig config)
-	{
-        this.config = config;
-        showOnInventory();
-	}
-
-	@Override
-	public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem itemWidget)
-	{
-		if (!FishBarrel.BARREL_IDS.contains(itemId))
-		{
-			return;
-		}
-
-		final FishBarrel barrel = FishBarrel.STATE;
-		final Rectangle bounds = itemWidget.getCanvasBounds();
-		final TextComponent textComponent = new TextComponent();
-		textComponent.setPosition(new Point(bounds.x - 1, bounds.y + 8));
-		textComponent.setColor(config.overlayColor());
-		textComponent.setText(barrel.isUnknown() ? "?" : Integer.toString(barrel.getHolding()));
-		textComponent.render(graphics);
-	}
+    @ConfigItem(
+            keyName = "overlayColor",
+            name = "Overlay Color",
+            description = "Color used for the barrel overlay that displays the fish count",
+            position = 1
+    )
+    default Color overlayColor()
+    {
+        return Color.CYAN;
+    }
 }
