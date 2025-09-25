@@ -43,7 +43,17 @@ public interface LifeSavingConfig extends Config
 		return true;
 	}
 
-	@ConfigItem(
+    @ConfigItem(
+            keyName = "ringOfLifeInfoboxOnlyNotEquipped",
+            name = "Ring of life infobox NOT equipped",
+            description = "Only show infobox when Ring of life is NOT equipped"
+    )
+    default boolean ringOfLifeInfoboxOnlyNotEquipped()
+    {
+        return false;
+    }
+
+    @ConfigItem(
 		keyName = "ringOfLifeNotification",
 		name = "Ring of life notification",
 		description = "Notify when Ring of life is destroyed"

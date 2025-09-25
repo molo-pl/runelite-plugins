@@ -33,30 +33,30 @@ import net.runelite.client.ui.overlay.infobox.InfoBox;
 @Getter
 public class LifeSavingInfoBox extends InfoBox
 {
-	private final LifeSavingItem type;
+    private final LifeSavingItem type;
 
-	public LifeSavingInfoBox(Plugin plugin, BufferedImage image, LifeSavingItem type, String name)
-	{
-		super(image, plugin);
-		this.type = type;
-		setTooltip(name);
-	}
+    public LifeSavingInfoBox(Plugin plugin, BufferedImage image, LifeSavingItem type, String name)
+    {
+        super(image, plugin);
+        this.type = type;
+        setTooltip(name);
+    }
 
-	@Override
-	public String getText()
-	{
-		return "";
-	}
+    @Override
+    public String getText()
+    {
+        return "";
+    }
 
-	@Override
-	public Color getTextColor()
-	{
-		return Color.WHITE;
-	}
+    @Override
+    public Color getTextColor()
+    {
+        return Color.WHITE;
+    }
 
-	@Override
-	public String getName()
-	{
-		return super.getName() + "_" + type.name();
-	}
+    @Override
+    public String getName()
+    {
+        return super.getName() + "_" + type.name();
+    }
 }

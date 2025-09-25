@@ -145,34 +145,80 @@ public class LifeSavingPlugin extends Plugin
 		updateInfobox(config.phoenixNecklaceInfobox(), LifeSavingItem.PHOENIX_NECKLACE, items);
 	}
 
-	private void updateInfobox(boolean enabled, LifeSavingItem type, Item[] wornItems)
-	{
-		if (!enabled)
-		{
-			return;
-		}
+    private static BufferedImage tintImageRed(BufferedImage src, int alpha)
+    {
+        // Clamp alpha to [0,255]
+        alpha = Math.max(0, Math.min(255, alpha));
 
-		removeInfobox(type);
+        BufferedImage dst = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        java.awt.Graphics2D g = dst.createGraphics();
+        try
+        {
+            g.drawImage(src, 0, 0, null);
+            g.setComposite(java.awt.AlphaComposite.SrcAtop);
+            g.setColor(new java.awt.Color(255, 0, 0, alpha));
+            g.fillRect(0, 0, src.getWidth(), src.getHeight());
+        }
+        finally
+        {
+            g.dispose();
+        }
+        return dst;
+    }
 
-		final int itemId = type.getItemId();
-		final int slotIdx = type.getSlot().getSlotIdx();
+    private void updateInfobox(boolean enabled, LifeSavingItem type, Item[] wornItems)
+    {
+        if (!enabled)
+        {
+            removeInfobox(type);
+            return;
+        }
 
-		if (wornItems.length <= slotIdx)
-		{
-			return;
-		}
+        // Idempotent: clear then add if needed
+        removeInfobox(type);
 
-		final Item wornItem = wornItems[slotIdx];
-		if (wornItem.getId() != itemId)
-		{
-			return;
-		}
+        final int itemId = type.getItemId();
+        final int slotIdx = type.getSlot().getSlotIdx();
 
-		final String name = itemManager.getItemComposition(itemId).getName();
-		final BufferedImage image = itemManager.getImage(itemId);
-		final LifeSavingInfoBox infobox = new LifeSavingInfoBox(this, image, type, name);
-		infoBoxManager.addInfoBox(infobox);
-	}
+        boolean equipped = false;
+        if (wornItems != null && wornItems.length > slotIdx)
+        {
+            final Item wornItem = wornItems[slotIdx];
+            equipped = (wornItem != null && wornItem.getId() == itemId);
+        }
+
+        // Default behavior: show when equipped
+        boolean wantInfobox = equipped;
+
+        // If toggle is ON and this is RoL, invert (show only when NOT equipped)
+        if (type == LifeSavingItem.RING_OF_LIFE && config.ringOfLifeInfoboxOnlyNotEquipped())
+        {
+            wantInfobox = !equipped;
+        }
+
+        if (!wantInfobox)
+        {
+            return;
+        }
+
+        // Always-red mode while in NOT-equipped branch for RoL
+        final boolean redMode =
+                (type == LifeSavingItem.RING_OF_LIFE)
+                        && config.ringOfLifeInfoboxOnlyNotEquipped()
+                        && !equipped;
+
+        // Build the image (tinted if redMode)
+        BufferedImage image = itemManager.getImage(itemId);
+        if (redMode)
+        {
+            image = tintImageRed(image, 90); // alpha 0..255; 90 ≈ 35% opacity
+        }
+
+        final String itemName = itemManager.getItemComposition(itemId).getName();
+        final LifeSavingInfoBox infobox = new LifeSavingInfoBox(this, image, type, itemName);
+        infoBoxManager.addInfoBox(infobox);
+    }
+
 
 	private void removeInfobox(final LifeSavingItem type)
 	{
