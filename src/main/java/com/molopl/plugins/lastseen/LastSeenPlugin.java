@@ -87,6 +87,10 @@ public class LastSeenPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
+		if (event.getGameState() == GameState.LOADING)
+		{
+			return;
+		}
 		persistLastSeen();
 		dao.clearCache();
 	}
