@@ -85,6 +85,7 @@ public class FishBarrelPlugin extends Plugin
 
 	private static final String BANK_FULL_MESSAGE = "Your bank could not hold your fish.";
 	private static final String BARREL_FULL_MESSAGE = "The barrel is full. It may be emptied at a bank.";
+	private static final String BANK_EMPTY_MESSAGE = "You empty all of your containers into the bank.";
 
 	// maps the name of the fish as it appears in chat message to corresponding item ID
 	private static final Map<String, Integer> FISH_TYPES_BY_NAME = ImmutableMap.<String, Integer>builder()
@@ -216,6 +217,9 @@ public class FishBarrelPlugin extends Plugin
 					FishBarrel.STATE.setHolding(FishBarrel.CAPACITY);
 					FishBarrel.STATE.setUnknown(false);
 					break;
+				case BANK_EMPTY_MESSAGE:
+					FishBarrel.STATE.setHolding(0);
+					FishBarrel.STATE.setUnknown(false);
 			}
 		}
 		else if (event.getType() == ChatMessageType.SPAM && hasAnyOfItems(FishBarrel.OPEN_BARREL_IDS))

@@ -37,7 +37,7 @@ public interface FishBarrelConfig extends Config {
     @ConfigItem(
             keyName = "overlayColor",
             name = "Overlay Color",
-            description = "Color used for the barrel overlay that displays the fish count",
+            description = "Color used for the barrel overlay that displays the fish count.",
             position = 1
     )
     default Color overlayColor()
