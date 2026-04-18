@@ -118,6 +118,8 @@ public class FishBarrelPlugin extends Plugin
 		.put("anglerfish", ItemID.RAW_ANGLERFISH)
 		.put("dark crab", ItemID.RAW_DARK_CRAB)
 		.put("sacred eel", ItemID.SNAKEBOSS_EEL)
+		.put("swordtip squid", ItemID.SWORDTIP_SQUID)
+		.put("jumbo squid", ItemID.JUMBO_SQUID)
 		.build();
 
 	// a set of possible fish caught with a cormorant on Molch island
