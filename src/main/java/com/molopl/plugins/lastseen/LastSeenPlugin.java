@@ -41,7 +41,7 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.NameableNameChanged;
 import net.runelite.api.events.RemovedFriend;
-import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -117,10 +117,10 @@ public class LastSeenPlugin extends Plugin
 	@Subscribe
 	public void onMenuEntryAdded(MenuEntryAdded event)
 	{
-		final int groupId = WidgetInfo.TO_GROUP(event.getActionParam1());
+		final int groupId = event.getActionParam1() >>> 16;
 
 		overlay.setTooltip(null);
-		if (groupId == WidgetInfo.FRIENDS_LIST.getGroupId() && event.getOption().equals("Message"))
+		if (groupId == InterfaceID.FRIENDS && event.getOption().equals("Message"))
 		{
 			final String displayName = Text.toJagexName(Text.removeTags(event.getTarget()));
 			if (StringUtils.isNotBlank(displayName) && !currentlyOnline.contains(displayName))
